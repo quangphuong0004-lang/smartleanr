@@ -1,0 +1,284 @@
+{% load static%}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng ký — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <style>
+    .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 100px 24px 60px; }
+    .reg-wrap { width: 100%; max-width: 560px; }
+
+    .reg-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 40px; }
+    .reg-logo .icon {
+      width: 40px; height: 40px; border-radius: 11px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .reg-logo .text {
+      font-family: var(--font-display); font-size: 22px; font-weight: 800;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .reg-title { font-family: var(--font-display); font-size: 30px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.3px; }
+    .reg-sub { color: var(--text2); font-size: 14px; margin-bottom: 32px; }
+    .reg-sub a { color: var(--accent); font-weight: 500; }
+    .reg-sub a:hover { text-decoration: underline; }
+
+    /* Role cards */
+    .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+    .role-card { position: relative; }
+    .role-card input { position: absolute; opacity: 0; }
+    .role-label {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+      padding: 16px 18px; background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      cursor: pointer; transition: all 0.2s;
+    }
+    .role-label-top { display: flex; align-items: center; gap: 10px; }
+    .role-icon-wrap {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+      background: rgba(255,255,255,0.06);
+    }
+    .role-name { font-weight: 600; font-size: 14px; }
+    .role-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .role-card input:checked + .role-label { border-color: var(--accent); background: rgba(74,222,128,0.06); }
+    .role-card input:checked + .role-label .role-icon-wrap { background: rgba(74,222,128,0.15); }
+    .role-card input:checked + .role-label .role-name { color: var(--accent); }
+
+    /* Two column grid */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+
+    /* Password strength */
+    .pw-strength { margin-top: 8px; }
+    .pw-strength-bar { display: flex; gap: 4px; margin-bottom: 5px; }
+    .pw-bar-seg { height: 3px; flex: 1; border-radius: 2px; background: var(--border); transition: background 0.3s; }
+    .pw-strength-text { font-size: 11px; color: var(--muted); }
+
+    .terms { font-size: 12px; color: var(--muted); text-align: center; margin-top: 20px; line-height: 1.6; }
+    .terms a { color: var(--accent2); }
+
+    /* Steps indicator */
+    .steps { display: flex; gap: 8px; margin-bottom: 32px; }
+    .step { flex: 1; height: 3px; border-radius: 2px; background: var(--border); transition: background 0.4s; }
+    .step.done { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+
+    .reg-logo {
+    display: flex;
+    align-items: center;
+    gap: 1px; 
+    }
+
+    .reg-logo img {
+        width: autopx;
+        height: 60px;
+        object-fit: contain;
+    }
+    .reg-logo .text {
+        margin-left: -25px;
+    }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-green"></div>
+  <div class="orb orb-cyan"></div>
+  <div class="orb orb-amber"></div>
+</div>
+
+<div class="auth-page z1">
+  <div class="reg-wrap">
+    <a href="/" class="reg-logo">
+      <img src="{% static 'images/smart_learn_logo.png' %}" alt="SmartLearn Logo">
+      <span class="text">SmartLearn</span>
+    </a>
+
+    <div class="reg-title animate-up">Tạo tài khoản mới</div>
+    <p class="reg-sub animate-up delay-1">
+      Đã có tài khoản? <a href="/accounts/login/">Đăng nhập ngay</a>
+    </p>
+
+    <!-- Progress steps -->
+    <div class="steps animate-up delay-1">
+      <div class="step done" id="step-1"></div>
+      <div class="step" id="step-2"></div>
+      <div class="step" id="step-3"></div>
+    </div>
+
+    <div class="card animate-up delay-2" style="padding:32px">
+      <div class="alert" id="reg-alert"></div>
+
+      <!-- Role -->
+      <div class="form-group">
+        <label class="form-label">Bạn tham gia với tư cách</label>
+        <div class="role-grid">
+          <div class="role-card">
+            <input type="radio" name="role" id="role-student" value="student" checked onchange="updateSteps()" />
+            <label for="role-student" class="role-label">
+              <div class="role-label-top">
+                <span class="role-name">Học sinh</span>
+              </div>
+              <span class="role-desc">Học các khóa học, hỏi bài AI, thi live quiz</span>
+            </label>
+          </div>
+          <div class="role-card">
+            <input type="radio" name="role" id="role-teacher" value="teacher" onchange="updateSteps()" />
+            <label for="role-teacher" class="role-label">
+              <div class="role-label-top">
+                <span class="role-name">Giáo viên</span>
+              </div>
+              <span class="role-desc">Tạo khóa học, quản lý lớp, theo dõi học sinh</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Name row -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Họ và tên</label>
+          <div class="input-wrap">
+            <span class="input-icon"></span>
+            <input type="text" id="reg-name" class="form-input" placeholder="Nguyễn Văn A" oninput="updateSteps()" />
+          </div>
+          <div class="error-text" id="name-err">Vui lòng nhập họ tên.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tên đăng nhập</label>
+          <div class="input-wrap">
+            <span class="input-icon"></span>
+            <input type="text" id="reg-username" class="form-input" placeholder="username" oninput="updateSteps()" />
+          </div>
+          <div class="error-text" id="username-err">Tối thiểu 3 ký tự, không dấu.</div>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <div class="input-wrap">
+          <span class="input-icon"></span>
+          <input type="email" id="reg-email" class="form-input" placeholder="Nhập email của bạn!" oninput="updateSteps()" />
+        </div>
+        <div class="error-text" id="email-err">Vui lòng nhập email hợp lệ.</div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Mật khẩu</label>
+          <div class="input-wrap">
+            <input type="password" id="reg-pw" class="form-input" placeholder="Tối thiểu 8 ký tự" oninput="checkPwStrength(this.value)" />
+            <button type="button" class="toggle-pw" onclick="togglePw('reg-pw',this)">👁</button>
+          </div>
+          <div class="pw-strength" id="pw-strength" style="display:none">
+            <div class="pw-strength-bar">
+              <div class="pw-bar-seg" id="seg-1"></div>
+              <div class="pw-bar-seg" id="seg-2"></div>
+              <div class="pw-bar-seg" id="seg-3"></div>
+              <div class="pw-bar-seg" id="seg-4"></div>
+            </div>
+            <div class="pw-strength-text" id="pw-strength-text"></div>
+          </div>
+          <div class="error-text" id="pw-err">Mật khẩu tối thiểu 8 ký tự.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Xác nhận mật khẩu</label>
+          <div class="input-wrap">
+            <input type="password" id="reg-pw2" class="form-input" placeholder="Nhập lại" />
+            <button type="button" class="toggle-pw" onclick="togglePw('reg-pw2',this)">👁</button>
+          </div>
+          <div class="error-text" id="pw2-err">Mật khẩu không khớp.</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-full" id="btn-register" onclick="handleRegister()">
+        <span class="btn-text">Tạo tài khoản</span>
+        <div class="spinner"></div>
+      </button>
+
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  Auth.redirectIfAuth();
+
+  function updateSteps() {
+    const name     = document.getElementById('reg-name').value.trim();
+    const email    = document.getElementById('reg-email').value.trim();
+    const username = document.getElementById('reg-username').value.trim();
+    document.getElementById('step-1').classList.add('done');
+    document.getElementById('step-2').classList.toggle('done', name.length > 0 && username.length >= 3);
+    document.getElementById('step-3').classList.toggle('done', isValidEmail(email));
+  }
+
+  function checkPwStrength(pw) {
+    const wrap = document.getElementById('pw-strength');
+    const text = document.getElementById('pw-strength-text');
+    if (!pw) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+
+    let score = 0;
+    if (pw.length >= 8)  score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+    const colors = ['#f87171','#f59e0b','#4ade80','#22d3ee'];
+    const labels = ['Yếu','Trung bình','Mạnh','Rất mạnh'];
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById(`seg-${i}`).style.background = i <= score ? colors[score-1] : 'var(--border)';
+    }
+    text.textContent = labels[score - 1] || '';
+    text.style.color = colors[score - 1] || 'var(--muted)';
+  }
+
+  async function handleRegister() {
+    const full_name = document.getElementById('reg-name').value.trim();
+    const username  = document.getElementById('reg-username').value.trim();
+    const email     = document.getElementById('reg-email').value.trim();
+    const password  = document.getElementById('reg-pw').value;
+    const password2 = document.getElementById('reg-pw2').value;
+    const role      = document.querySelector('input[name="role"]:checked').value;
+
+    hideAlert('reg-alert');
+    let hasErr = false;
+    const checks = [
+      ['reg-name',     'name-err',     !full_name,                         'Vui lòng nhập họ tên.'],
+      ['reg-username', 'username-err', username.length < 3,                'Tối thiểu 3 ký tự, không dấu.'],
+      ['reg-email',    'email-err',    !isValidEmail(email),               'Email không hợp lệ.'],
+      ['reg-pw',       'pw-err',       password.length < 8,               'Mật khẩu tối thiểu 8 ký tự.'],
+      ['reg-pw2',      'pw2-err',      password !== password2,             'Mật khẩu không khớp.'],
+    ];
+    checks.forEach(([inp,err,cond,msg]) => { setFieldError(inp,err,cond,msg); if(cond) hasErr=true; });
+    if (hasErr) return;
+
+    setLoading('btn-register', true);
+    try {
+      const res  = await fetch(`${API}/register/`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ email, username, full_name, password, password2, role }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showAlert('reg-alert',
+          'Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.', 'success');
+        document.querySelectorAll('.form-input').forEach(el => el.value = '');
+        setTimeout(() => window.location.href = '/accounts/login/', 3000);
+      } else {
+        const msg = Object.values(data).flat().join(' ') || 'Đăng ký thất bại.';
+        showAlert('reg-alert', ` ${msg}`, 'error');
+      }
+    } catch { showAlert('reg-alert', ' Lỗi kết nối.', 'error'); }
+    finally { setLoading('btn-register', false); }
+  }
+</script>
+</body>
+</html>

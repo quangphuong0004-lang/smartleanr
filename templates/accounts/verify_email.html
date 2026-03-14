@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xác thực Email — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <style>
+    .verify-page {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 24px;
+    }
+    .verify-wrap { width: 100%; max-width: 460px; text-align: center; }
+
+    /* Logo */
+    .verify-logo {
+      display: inline-flex; align-items: center; gap: 10px;
+      margin-bottom: 48px; text-decoration: none;
+    }
+    .verify-logo-icon {
+      width: 40px; height: 40px; border-radius: 11px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .verify-logo-text {
+      font-family: var(--font-display); font-size: 22px; font-weight: 800;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    /* States */
+    .state { display: none; }
+    .state.active { display: block; animation: fadeUp 0.4s ease; }
+
+    /* Icon */
+    .state-icon {
+      width: 100px; height: 100px; border-radius: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 46px; margin: 0 auto 28px;
+    }
+    .state-icon.loading { background: rgba(255,255,255,0.05); border: 1px solid var(--border); }
+    .state-icon.success { background: rgba(74,222,128,0.1);  border: 1px solid rgba(74,222,128,0.25); animation: pop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+    .state-icon.error   { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); animation: pop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+    .state-icon.expired { background: rgba(245,158,11,0.1);  border: 1px solid rgba(245,158,11,0.25);  animation: pop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+
+    @keyframes pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* Loading spinner inside icon */
+    .icon-spinner {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Dot pulse */
+    .dot-pulse {
+      display: flex; gap: 6px; justify-content: center; margin-top: 20px;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+      animation: dotPulse 1.2s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dotPulse { 0%,80%,100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
+
+    .state-title {
+      font-family: var(--font-display); font-size: 26px; font-weight: 800;
+      margin-bottom: 12px; letter-spacing: -0.3px;
+    }
+    .state-desc {
+      color: var(--text2); font-size: 15px; line-height: 1.7;
+      margin-bottom: 32px;
+    }
+    .state-desc strong { color: var(--text); }
+    .state-desc .highlight { color: var(--accent); font-weight: 600; }
+
+    /* Countdown */
+    .countdown {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--muted); margin-bottom: 24px;
+    }
+    .countdown-num {
+      font-family: var(--font-display); font-weight: 700;
+      color: var(--accent); font-size: 15px;
+    }
+
+    /* Steps */
+    .next-steps {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 24px; margin-bottom: 28px; text-align: left;
+    }
+    .next-steps-title { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+    .next-step { display: flex; align-items: center; gap: 12px; padding: 8px 0; font-size: 14px; }
+    .next-step:not(:last-child) { border-bottom: 1px solid var(--border); }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #080c14; font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    /* Confetti */
+    .confetti-wrap { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .confetti-piece {
+      position: absolute; width: 8px; height: 8px; border-radius: 2px;
+      animation: confettiFall linear forwards;
+      opacity: 0;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-green"></div>
+  <div class="orb orb-cyan"></div>
+</div>
+
+<div class="confetti-wrap" id="confetti-wrap"></div>
+
+<div class="verify-page z1">
+  <div class="verify-wrap">
+
+    <a href="/" class="verify-logo">
+      <div class="verify-logo-icon">🎓</div>
+      <span class="verify-logo-text">SmartLearn</span>
+    </a>
+
+    <!-- ── STATE: LOADING ── -->
+    <div class="state active" id="state-loading">
+      <div class="state-icon loading">
+        <div class="icon-spinner"></div>
+      </div>
+      <div class="state-title">Đang xác thực...</div>
+      <div class="state-desc">Vui lòng chờ trong giây lát, chúng tôi đang xác thực email của bạn.</div>
+      <div class="dot-pulse">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+    </div>
+
+    <!-- ── STATE: SUCCESS ── -->
+    <div class="state" id="state-success">
+      <div class="state-icon success">✅</div>
+      <div class="state-title">Xác thực thành công! 🎉</div>
+      <div class="state-desc">
+        Email <strong id="verified-email"></strong> đã được xác thực.<br/>
+        Tài khoản của bạn đã sẵn sàng để sử dụng.
+      </div>
+
+      <div class="next-steps">
+        <div class="next-steps-title">Bước tiếp theo</div>
+        <div class="next-step">
+          <div class="step-num">1</div>
+          <span>Đăng nhập vào tài khoản vừa tạo</span>
+        </div>
+        <div class="next-step">
+          <div class="step-num">2</div>
+          <span>Khám phá các khóa học phù hợp</span>
+        </div>
+        <div class="next-step">
+          <div class="step-num">3</div>
+          <span>Hỏi bài AI Tutor và học cùng cộng đồng</span>
+        </div>
+      </div>
+
+      <div class="countdown">
+        Tự động chuyển đến trang đăng nhập sau
+        <span class="countdown-num" id="countdown-num">5</span> giây
+      </div>
+
+      <a href="/accounts/login/" class="btn btn-primary btn-full" style="font-size:15px;padding:15px">
+        🚀 Đăng nhập ngay
+      </a>
+    </div>
+
+    <!-- ── STATE: EXPIRED ── -->
+    <div class="state" id="state-expired">
+      <div class="state-icon expired">⏰</div>
+      <div class="state-title">Link đã hết hạn</div>
+      <div class="state-desc">
+        Link xác thực chỉ có hiệu lực trong <strong>24 giờ</strong> và đã hết hạn.<br/>
+        Vui lòng đăng ký lại để nhận link mới.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <a href="/accounts/register/" class="btn btn-primary btn-full" style="font-size:15px;padding:15px">
+          Đăng ký lại
+        </a>
+        <a href="/accounts/login/" class="btn btn-outline btn-full">
+          Đã có tài khoản? Đăng nhập
+        </a>
+      </div>
+    </div>
+
+    <!-- ── STATE: ERROR ── -->
+    <div class="state" id="state-error">
+      <div class="state-icon error">❌</div>
+      <div class="state-title">Link không hợp lệ</div>
+      <div class="state-desc" id="error-desc">
+        Link xác thực không đúng hoặc đã được sử dụng trước đó.<br/>
+        Nếu bạn đã xác thực rồi, hãy thử đăng nhập.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <a href="/accounts/login/" class="btn btn-primary btn-full" style="font-size:15px;padding:15px">
+          🔑 Thử đăng nhập
+        </a>
+        <a href="/accounts/register/" class="btn btn-outline btn-full">
+          Đăng ký tài khoản mới
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  function showState(name) {
+    document.querySelectorAll('.state').forEach(el => el.classList.remove('active'));
+    document.getElementById(`state-${name}`).classList.add('active');
+  }
+
+  // Lấy token từ URL: /accounts/verify-email/?token=xxxx
+  function getToken() {
+  const parts = window.location.pathname.split('/').filter(Boolean);
+  return parts[parts.length - 1];
+}
+
+  // Confetti animation khi thành công
+  function launchConfetti() {
+    const colors = ['#4ade80','#22d3ee','#f59e0b','#a78bfa','#f472b6'];
+    const wrap   = document.getElementById('confetti-wrap');
+    for (let i = 0; i < 60; i++) {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.cssText = `
+        left: ${Math.random() * 100}%;
+        background: ${colors[Math.floor(Math.random() * colors.length)]};
+        width: ${6 + Math.random() * 8}px;
+        height: ${6 + Math.random() * 8}px;
+        border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+        animation-duration: ${2 + Math.random() * 2}s;
+        animation-delay: ${Math.random() * 0.8}s;
+      `;
+      wrap.appendChild(el);
+    }
+    setTimeout(() => wrap.innerHTML = '', 4000);
+  }
+
+  // Countdown rồi redirect
+  localStorage.removeItem('sl_access');
+  localStorage.removeItem('sl_refresh');
+  localStorage.removeItem('sl_user');
+  function startCountdown(seconds = 5) {
+    const el = document.getElementById('countdown-num');
+    const interval = setInterval(() => {
+      seconds--;
+      el.textContent = seconds;
+      if (seconds <= 0) {
+        clearInterval(interval);
+        localStorage.clear();
+        window.location.href = '/accounts/login/';
+      }
+    }, 1000);
+  }
+
+  // Gọi API xác thực
+  async function verifyEmail(token) {
+    try {
+      const res  = await fetch(`/accounts/api/verify-email/${token}/`);
+      const data = await res.json();
+
+      if (res.ok) {
+        // Lấy email từ response nếu có
+        if (data.email) {
+          document.getElementById('verified-email').textContent = data.email;
+        }
+        showState('success');
+        launchConfetti();
+        startCountdown(5);
+      } else {
+        // Phân biệt hết hạn vs lỗi khác
+        const msg = data.error || '';
+        if (msg.includes('hết hạn') || msg.includes('expired')) {
+          showState('expired');
+        } else {
+          document.getElementById('error-desc').textContent = msg || 'Link không hợp lệ hoặc đã được sử dụng.';
+          showState('error');
+        }
+      }
+    } catch (err) {
+      document.getElementById('error-desc').textContent = 'Lỗi kết nối đến server. Vui lòng thử lại.';
+      showState('error');
+    }
+  }
+
+  // Khởi chạy
+  const token = getToken();
+  if (!token) {
+    showState('error');
+  } else {
+    verifyEmail(token);
+  }
+</script>
+</body>
+</html>

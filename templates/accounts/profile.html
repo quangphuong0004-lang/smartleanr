@@ -1,0 +1,432 @@
+{% load static%}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hồ sơ cá nhân — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <style>
+    .profile-header {
+      background: linear-gradient(135deg, rgba(74,222,128,0.06), rgba(34,211,238,0.04));
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 40px; margin-bottom: 28px; position: relative; overflow: hidden;
+    }
+    .profile-header::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 240px; height: 240px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(74,222,128,0.1), transparent 70%);
+      pointer-events: none;
+    }
+    .profile-top { display: flex; align-items: flex-start; gap: 28px; flex-wrap: wrap; }
+    .avatar-wrap { position: relative; flex-shrink: 0; }
+
+    /* ── Avatar container ── */
+    .avatar-img {
+      width: 100px; height: 100px; border-radius: 24px;
+      /* Mặc định: gradient nền + căn giữa chữ */
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px; font-weight: 800; color: #080c14;
+      font-family: var(--font-display);
+      overflow: hidden;
+      transition: background 0.3s;
+      /* Khi là chữ */
+      line-height: 1;
+      text-align: center;
+      /* Khi là ảnh img bên trong */
+      padding: 0;
+    }
+    /* Ảnh bên trong avatar */
+    .avatar-img img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 24px;
+      display: block;
+    }
+
+    .avatar-edit-btn {
+      position: absolute; bottom: -6px; right: -6px;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--panel2); border: 2px solid var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; cursor: pointer; transition: background 0.2s;
+      z-index: 1;
+    }
+    .avatar-edit-btn:hover { background: var(--accent); }
+
+    .profile-info { flex: 1; min-width: 0; }
+    .profile-name { font-family: var(--font-display); font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+    .profile-username { color: var(--text2); font-size: 14px; margin-bottom: 12px; }
+    .profile-meta { display: flex; flex-wrap: wrap; gap: 10px; }
+
+    .profile-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--border);
+      border-radius: 12px; overflow: hidden; margin-top: 28px;
+    }
+    .profile-stat { background: rgba(255,255,255,0.02); padding: 18px 20px; text-align: center; }
+    .profile-stat-num { font-family: var(--font-display); font-size: 26px; font-weight: 800; }
+    .profile-stat-label { font-size: 12px; color: var(--text2); margin-top: 3px; }
+
+    .profile-tabs {
+      display: flex; gap: 4px; margin-bottom: 24px;
+      background: rgba(255,255,255,0.03); border-radius: 12px; padding: 4px;
+    }
+    .profile-tab {
+      flex: 1; padding: 10px; border: none; background: transparent;
+      color: var(--text2); font-family: var(--font-display); font-size: 13px; font-weight: 600;
+      border-radius: 10px; cursor: pointer; transition: all 0.2s;
+    }
+    .profile-tab.active { background: var(--panel2); color: var(--text); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeUp 0.3s ease; }
+
+    .section-header { font-family: var(--font-display); font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) {
+      .form-row-2 { grid-template-columns: 1fr; }
+      .profile-stats { grid-template-columns: 1fr; }
+    }
+    textarea.form-input { padding-left: 16px; min-height: 100px; resize: vertical; line-height: 1.6; }
+
+    .activity-list { display: flex; flex-direction: column; gap: 12px; }
+    .activity-item {
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px 20px; background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border); border-radius: var(--radius);
+    }
+    .activity-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .activity-icon.cyan  { background: rgba(34,211,238,0.12); }
+    .activity-icon.amber { background: rgba(245,158,11,0.12); }
+    .activity-text { flex: 1; }
+    .activity-title { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+    .activity-time  { font-size: 12px; color: var(--muted); }
+    .activity-score { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--accent); }
+
+    #avatar-input { display: none; }
+    .nav-logo-img { height: 60px; width: auto; object-fit: contain; display: block; }
+    .nav-logo { display: flex; align-items: center; gap: 0px; }
+    .nav-logo-text { margin-left: -20px; }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-green"></div>
+  <div class="orb orb-cyan"></div>
+</div>
+
+<nav class="navbar z1">
+  <a href="/" class="nav-logo">
+    <img src="{% static 'images/smart_learn_logo.png' %}" alt="SmartLearn Logo" class="nav-logo-img">
+    <span class="nav-logo-text">SmartLearn</span>
+  </a>
+  <div class="nav-links" id="navbar-links"></div>
+</nav>
+
+<div class="page z1">
+  <div class="page-inner-wide">
+
+    <!-- Profile header -->
+    <div class="profile-header animate-up">
+      <div class="profile-top">
+        <div class="avatar-wrap">
+          <div class="avatar-img" id="avatar-display"></div>
+          <div class="avatar-edit-btn" onclick="document.getElementById('avatar-input').click()">✏️</div>
+          <input type="file" id="avatar-input" accept="image/*" onchange="previewAvatar(this)" />
+        </div>
+        <div class="profile-info">
+          <div class="profile-name" id="display-name">Đang tải...</div>
+          <div class="profile-username" id="display-username">@username</div>
+          <div class="profile-meta">
+            <span class="badge badge-green" id="display-role">Học sinh</span>
+            <span class="badge badge-muted" id="display-email">email@example.com</span>
+            <span class="badge badge-cyan">Đã xác thực</span>
+          </div>
+        </div>
+        <div>
+          <button class="btn btn-outline" onclick="switchTab('edit')" style="font-size:13px;padding:9px 18px">Chỉnh sửa</button>
+        </div>
+      </div>
+
+      <div class="profile-stats">
+        <div class="profile-stat">
+          <div class="profile-stat-num" style="color:var(--accent)">4</div>
+          <div class="profile-stat-label">Khóa học</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-num" style="color:var(--accent2)">28</div>
+          <div class="profile-stat-label">Bài hoàn thành</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-num" style="color:var(--accent3)">🔥 7</div>
+          <div class="profile-stat-label">Ngày streak</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="profile-tabs animate-up delay-1">
+      <button class="profile-tab active" id="tab-info"     onclick="switchTab('info')">Thông tin</button>
+      <button class="profile-tab"        id="tab-edit"     onclick="switchTab('edit')">Chỉnh sửa</button>
+      <button class="profile-tab"        id="tab-activity" onclick="switchTab('activity')">Hoạt động</button>
+    </div>
+
+    <!-- Tab: Info -->
+    <div class="tab-panel active" id="panel-info">
+      <div class="card">
+        <div class="section-header">Thông tin cá nhân</div>
+        <div class="alert" id="info-alert"></div>
+        <div style="display:grid;gap:18px">
+          <div>
+            <div class="form-label">Họ và tên</div>
+            <div style="font-size:15px;padding:8px 0;border-bottom:1px solid var(--border)" id="info-name">—</div>
+          </div>
+          <div>
+            <div class="form-label">Tên đăng nhập</div>
+            <div style="font-size:15px;padding:8px 0;border-bottom:1px solid var(--border)" id="info-username">—</div>
+          </div>
+          <div>
+            <div class="form-label">Email</div>
+            <div style="font-size:15px;padding:8px 0;border-bottom:1px solid var(--border)" id="info-email">—</div>
+          </div>
+          <div>
+            <div class="form-label">Vai trò</div>
+            <div style="font-size:15px;padding:8px 0;border-bottom:1px solid var(--border)" id="info-role">—</div>
+          </div>
+          <div>
+            <div class="form-label">Giới thiệu bản thân</div>
+            <div style="font-size:15px;padding:8px 0;color:var(--text2);line-height:1.7" id="info-bio">Chưa có thông tin.</div>
+          </div>
+          <div>
+            <div class="form-label">Ngày tham gia</div>
+            <div style="font-size:15px;padding:8px 0" id="info-joined">—</div>
+          </div>
+        </div>
+        <div style="margin-top:24px">
+          <a href="/accounts/change-password/" class="btn btn-outline" style="font-size:13px">Đổi mật khẩu</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Edit -->
+    <div class="tab-panel" id="panel-edit">
+      <div class="card">
+        <div class="section-header">Chỉnh sửa hồ sơ</div>
+        <div class="alert" id="edit-alert"></div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label">Họ và tên</label>
+            <div class="input-wrap">
+              <input type="text" id="edit-name" class="form-input no-icon" placeholder="Nguyễn Văn A" />
+            </div>
+            <div class="error-text" id="edit-name-err">Vui lòng nhập họ tên.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tên đăng nhập</label>
+            <div class="input-wrap">
+              <input type="text" id="edit-username" class="form-input no-icon" placeholder="username" />
+            </div>
+            <div class="error-text" id="edit-username-err">Tối thiểu 3 ký tự.</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Giới thiệu bản thân</label>
+          <textarea id="edit-bio" class="form-input no-icon" placeholder="Ví dụ: Mình là học sinh lớp 11, đam mê Toán và Lý..."></textarea>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:flex-end">
+          <button class="btn btn-ghost" onclick="switchTab('info')" style="font-size:13px">Hủy</button>
+          <button class="btn btn-primary" id="btn-save" onclick="handleSaveProfile()" style="font-size:13px">
+            <span class="btn-text">Lưu thay đổi</span>
+            <div class="spinner"></div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Activity -->
+    <div class="tab-panel" id="panel-activity">
+      <div class="card">
+        <div class="section-header">Hoạt động gần đây</div>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-text">
+              <div class="activity-title">Hoàn thành bài kiểm tra — Hàm số bậc hai</div>
+              <div class="activity-time">2 giờ trước</div>
+            </div>
+            <div class="activity-score">9.0</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon cyan">💬</div>
+            <div class="activity-text">
+              <div class="activity-title">Hỏi AI Tutor về phương trình lượng giác</div>
+              <div class="activity-time">5 giờ trước</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon amber">⚡</div>
+            <div class="activity-text">
+              <div class="activity-title">Tham gia Live Quiz — Vật lý cơ bản</div>
+              <div class="activity-time">Hôm qua, 20:30</div>
+            </div>
+            <div class="activity-score" style="color:var(--accent2)">#3</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-text">
+              <div class="activity-title">Đăng ký khóa học — Hóa học lớp 10</div>
+              <div class="activity-time">2 ngày trước</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  Auth.requireAuth();
+  buildNavbar('profile');
+
+  function switchTab(name) {
+    ['info','edit','activity'].forEach(t => {
+      document.getElementById(`tab-${t}`).classList.toggle('active', t === name);
+      document.getElementById(`panel-${t}`).classList.toggle('active', t === name);
+    });
+  }
+
+  // ── Render avatar: ảnh nếu có, chữ cái nếu không ─────────────
+function renderAvatar(user) {
+  const el       = document.getElementById('avatar-display');
+  const initials = (user.full_name || user.username || '?')[0].toUpperCase();
+
+  if (user.avatar_url) {
+    // Giống _navAvatarHtml — dùng <img> với onerror fallback
+    el.style.background = 'none';
+    el.innerHTML = `<img
+      src="${user.avatar_url}"
+      alt="avatar"
+      style="width:100%;height:100%;object-fit:cover;border-radius:24px;display:block;"
+      onerror="
+        this.parentElement.style.background='linear-gradient(135deg,var(--accent),var(--accent2))';
+        this.parentElement.style.fontSize='40px';
+        this.parentElement.textContent='${initials}';
+      "
+    />`;
+  } else {
+    el.style.background = 'linear-gradient(135deg, var(--accent), var(--accent2))';
+    el.style.fontSize   = '40px';
+    el.textContent      = initials;
+    el.innerHTML        = initials;
+  }
+}
+
+  // ── Load profile từ localStorage ─────────────────────────────
+  function loadProfile() {
+    const user = Auth.getUser();
+    if (!user) return;
+
+    renderAvatar(user);
+
+    document.getElementById('display-name').textContent     = user.full_name || user.username;
+    document.getElementById('display-username').textContent = `@${user.username}`;
+    document.getElementById('display-email').textContent    = user.email;
+    document.getElementById('display-role').textContent     = user.role === 'teacher' ? 'Giáo viên' : 'Học sinh';
+
+    document.getElementById('info-name').textContent     = user.full_name || '—';
+    document.getElementById('info-username').textContent = user.username;
+    document.getElementById('info-email').textContent    = user.email;
+    document.getElementById('info-role').textContent     = user.role === 'teacher' ? 'Giáo viên' : 'Học sinh';
+    document.getElementById('info-bio').textContent      = user.bio || 'Chưa có thông tin.';
+    document.getElementById('info-joined').textContent   = user.created_at
+      ? new Date(user.created_at).toLocaleDateString('vi-VN', { year:'numeric', month:'long', day:'numeric' })
+      : '—';
+
+    document.getElementById('edit-name').value     = user.full_name || '';
+    document.getElementById('edit-username').value = user.username  || '';
+    document.getElementById('edit-bio').value      = user.bio       || '';
+  }
+
+  // ── Fetch profile mới nhất từ server ─────────────────────────
+  async function fetchAndSaveProfile() {
+    try {
+      const res = await Auth.fetchWithAuth(`${API}/profile/`);
+      if (!res) return;
+      const data = await res.json();
+      Auth.save(
+        { access: Auth.getAccess(), refresh: Auth.getRefresh() },
+        data
+      );
+      loadProfile();
+      buildNavbar('profile');
+    } catch {}
+  }
+
+  // ── Lưu hồ sơ ────────────────────────────────────────────────
+  async function handleSaveProfile() {
+    const full_name = document.getElementById('edit-name').value.trim();
+    const username  = document.getElementById('edit-username').value.trim();
+    const bio       = document.getElementById('edit-bio').value.trim();
+    hideAlert('edit-alert');
+
+    let hasErr = false;
+    setFieldError('edit-name', 'edit-name-err', !full_name, 'Vui lòng nhập họ tên.');
+    if (!full_name) hasErr = true;
+    setFieldError('edit-username', 'edit-username-err', username.length < 3, 'Tối thiểu 3 ký tự.');
+    if (username.length < 3) hasErr = true;
+    if (hasErr) return;
+
+    const formData = new FormData();
+    formData.append('full_name', full_name);
+    formData.append('username',  username);
+    formData.append('bio',       bio);
+
+    const avatarFile = document.getElementById('avatar-input').files[0];
+    if (avatarFile) formData.append('avatar', avatarFile);
+
+    setLoading('btn-save', true);
+    try {
+      const res  = await Auth.fetchWithAuth(`${API}/profile/`, {
+        method: 'PATCH',
+        body:   formData,
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        await fetchAndSaveProfile();
+        showAlert('edit-alert', 'Cập nhật hồ sơ thành công!', 'success');
+        setTimeout(() => switchTab('info'), 1500);
+      } else {
+        showAlert('edit-alert', ` ${Object.values(data).flat().join(' ')}`, 'error');
+      }
+    } catch {
+      showAlert('edit-alert', ' Lỗi kết nối.', 'error');
+    } finally {
+      setLoading('btn-save', false);
+    }
+  }
+
+  // ── Preview ảnh trước khi lưu ─────────────────────────────────
+  function previewAvatar(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const el = document.getElementById('avatar-display');
+      el.style.background = 'none';
+      el.innerHTML = `<img
+        src="${e.target.result}"
+        alt="preview"
+        style="width:100%;height:100%;object-fit:cover;border-radius:24px;display:block;"
+      />`;
+    };
+    reader.readAsDataURL(file);
+  }
+  // Fetch mới nhất khi load trang
+  fetchAndSaveProfile();
+</script>
+</body>
+</html>
