@@ -190,7 +190,7 @@ function _dropdownAvatarHtml(user) {
 function buildNavbar(activePage = '') {
   const user     = Auth.getUser();
   const loggedIn = Auth.isLoggedIn();
-
+ 
   const guestLinks = `
     <a href="/" class="nav-link ${activePage === 'home' ? 'active' : ''}">Trang chủ</a>
     <a href="/courses/" class="nav-link ${activePage === 'courses' ? 'active' : ''}">Khóa học</a>
@@ -201,20 +201,36 @@ function buildNavbar(activePage = '') {
        class="btn btn-primary"
        style="padding:8px 18px; font-size:13px;">Đăng ký</a>
   `;
-
+ 
+  // Link "Khóa học của tôi" — hiện với tất cả role đã đăng nhập
+  const myCoursesLink = `
+    <a href="/courses/my/" class="nav-link ${activePage === 'my' ? 'active' : ''}">Của tôi</a>
+  `;
+ 
+  // Nút "Tạo khóa học" — chỉ hiện với teacher / admin
+  const createCourseLink = (user?.role === 'teacher' || user?.role === 'admin') ? `
+    <a href="/courses/create/"
+       class="btn btn-primary"
+       style="padding:8px 16px; font-size:13px; white-space:nowrap;">
+      Tạo khóa học
+    </a>
+  ` : '';
+ 
   const userLinks = `
     <a href="/" class="nav-link ${activePage === 'home' ? 'active' : ''}">Trang chủ</a>
     <a href="/courses/" class="nav-link ${activePage === 'courses' ? 'active' : ''}">Khóa học</a>
+    ${myCoursesLink}
     <a href="/dashboard/" class="nav-link ${activePage === 'dashboard' ? 'active' : ''}">Dashboard</a>
+    ${createCourseLink}
     <div style="position:relative">
-
+ 
       ${_navAvatarHtml(user)}
-
+ 
       <div class="nav-dropdown" id="nav-dropdown" style="display:none">
         <div style="padding:12px 14px 10px; display:flex; align-items:center; gap:12px">
-
+ 
           ${_dropdownAvatarHtml(user)}
-
+ 
           <div style="min-width:0; flex:1">
             <div style="font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
               ${user?.full_name || user?.username || ''}
@@ -230,17 +246,17 @@ function buildNavbar(activePage = '') {
           </div>
         </div>
         <div class="nav-dropdown-sep"></div>
-        <a href="/accounts/profile/"         class="nav-dropdown-item">Hồ sơ cá nhân</a>
+        <a href="/accounts/profile/" class="nav-dropdown-item">Hồ sơ cá nhân</a>
+        <a href="/courses/my/" class="nav-dropdown-item">Khóa học của tôi</a>
         <a href="/accounts/change-password/" class="nav-dropdown-item">Đổi mật khẩu</a>
         <div class="nav-dropdown-sep"></div>
         <div class="nav-dropdown-item danger" onclick="Auth.logout()">Đăng xuất</div>
       </div>
     </div>
   `;
-
+ 
   document.getElementById('navbar-links').innerHTML = loggedIn ? userLinks : guestLinks;
 }
-
 // ── Dropdown toggle ───────────────────────────────────────────
 function toggleDropdown() {
   const dd = document.getElementById('nav-dropdown');

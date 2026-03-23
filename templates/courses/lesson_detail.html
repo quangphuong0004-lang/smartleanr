@@ -1,0 +1,364 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bài học — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <style>
+    /* Layout */
+    .lesson-layout {
+      display: grid; grid-template-columns: 280px 1fr;
+      gap: 0; min-height: calc(100vh - 68px); margin-top: 68px;
+    }
+    @media (max-width: 860px) { .lesson-layout { grid-template-columns: 1fr; } }
+
+    /* Sidebar */
+    .lesson-sidebar {
+      background: var(--panel); border-right: 1px solid var(--border);
+      height: calc(100vh - 68px); overflow-y: auto; position: sticky; top: 68px;
+    }
+    .sidebar-header {
+      padding: 20px; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: var(--panel); z-index: 10;
+    }
+    .sidebar-course-title {
+      font-family: var(--font-display); font-size: 14px; font-weight: 700;
+      margin-bottom: 10px; line-height: 1.4;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sidebar-progress { }
+    .sidebar-progress-bar-wrap { background: rgba(255,255,255,0.07); border-radius: 4px; height: 5px; margin-top: 5px; }
+    .sidebar-progress-bar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.8s ease; }
+    .sidebar-progress-label { font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; }
+
+    .sidebar-lessons { padding: 8px; }
+    .sidebar-lesson {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px; cursor: pointer;
+      transition: background 0.15s; text-decoration: none; color: inherit;
+      margin-bottom: 2px;
+    }
+    .sidebar-lesson:hover { background: rgba(255,255,255,0.05); }
+    .sidebar-lesson.active { background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.15); }
+    .sidebar-lesson.locked { opacity: 0.4; cursor: not-allowed; }
+
+    .sl-num {
+      width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
+      background: rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: var(--text2);
+    }
+    .sl-num.done { background: rgba(74,222,128,0.15); color: var(--accent); }
+    .sl-num.active { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #080c14; }
+
+    .sl-info { flex: 1; min-width: 0; }
+    .sl-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sl-meta  { font-size: 11px; color: var(--muted); }
+
+    /* Main content */
+    .lesson-main { padding: 40px 48px; max-width: 820px; }
+    @media (max-width: 860px) { .lesson-main { padding: 24px; } }
+
+    .lesson-breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--muted); margin-bottom: 28px;
+    }
+    .lesson-breadcrumb a { color: var(--text2); transition: color 0.2s; }
+    .lesson-breadcrumb a:hover { color: var(--accent); }
+
+    .lesson-title {
+      font-family: var(--font-display); font-size: 26px; font-weight: 800;
+      margin-bottom: 20px; line-height: 1.3; letter-spacing: -0.3px;
+    }
+
+    /* Video embed */
+    .video-wrap {
+      position: relative; padding-bottom: 56.25%; height: 0;
+      border-radius: var(--radius-lg); overflow: hidden;
+      background: var(--bg2); margin-bottom: 32px;
+      border: 1px solid var(--border);
+    }
+    .video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+    /* Content */
+    .lesson-content {
+      font-size: 15px; line-height: 1.8; color: var(--text2);
+      margin-bottom: 40px;
+    }
+    .lesson-content p  { margin-bottom: 16px; }
+    .lesson-content h2 { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--text); margin: 28px 0 12px; }
+    .lesson-content h3 { font-family: var(--font-display); font-size: 17px; font-weight: 600; color: var(--text); margin: 20px 0 8px; }
+    .lesson-content ul, .lesson-content ol { padding-left: 24px; margin-bottom: 16px; }
+    .lesson-content li { margin-bottom: 6px; }
+    .lesson-content code {
+      background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px;
+      font-family: monospace; font-size: 13px; color: var(--accent2);
+    }
+    .lesson-content pre {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; overflow-x: auto;
+      margin-bottom: 16px;
+    }
+    .lesson-content blockquote {
+      border-left: 3px solid var(--accent); padding-left: 16px;
+      color: var(--text2); font-style: italic; margin: 16px 0;
+    }
+
+    /* Navigation buttons */
+    .lesson-nav {
+      display: flex; gap: 12px; justify-content: space-between;
+      padding-top: 28px; border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .lesson-complete-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 24px; border: none; border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #080c14; font-family: var(--font-display); font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+    }
+    .lesson-complete-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .lesson-complete-btn.done {
+      background: rgba(74,222,128,0.1); color: var(--accent);
+      border: 1px solid rgba(74,222,128,0.3);
+    }
+    .lesson-complete-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .nav-logo-img { height: 60px; width: auto; object-fit: contain; display: block; }
+    .nav-logo { display: flex; align-items: center; }
+    .nav-logo-text { margin-left: -20px; }
+
+    /* Completed toast */
+    .complete-toast {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: rgba(74,222,128,0.15); border: 1px solid rgba(74,222,128,0.3);
+      color: var(--accent); padding: 12px 24px; border-radius: 40px;
+      font-size: 14px; font-weight: 600;
+      transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+      z-index: 1000; white-space: nowrap;
+    }
+    .complete-toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+<div class="bg-orbs" style="opacity:0.5">
+  <div class="orb orb-green"></div>
+  <div class="orb orb-cyan"></div>
+</div>
+
+<nav class="navbar z1">
+  <a href="/" class="nav-logo">
+    <img src="{% static 'images/smart_learn_logo.png' %}" alt="SmartLearn" class="nav-logo-img">
+    <span class="nav-logo-text">SmartLearn</span>
+  </a>
+  <div class="nav-links" id="navbar-links"></div>
+</nav>
+
+<div class="lesson-layout z1">
+  <!-- Sidebar -->
+  <aside class="lesson-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-course-title" id="sidebar-course-title">Đang tải...</div>
+      <div class="sidebar-progress">
+        <div class="sidebar-progress-label">
+          <span id="sb-completed">0</span> / <span id="sb-total">0</span> bài hoàn thành
+          <span id="sb-pct" style="color:var(--accent)">0%</span>
+        </div>
+        <div class="sidebar-progress-bar-wrap">
+          <div class="sidebar-progress-bar" id="sb-bar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-lessons" id="sidebar-lessons">
+      <div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Đang tải bài học...</div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="lesson-main">
+    <div class="lesson-breadcrumb animate-up">
+      <a href="/courses/">Khóa học</a>
+      <span>›</span>
+      <a href="#" id="bc-course">Đang tải...</a>
+      <span>›</span>
+      <span id="bc-lesson">Bài học</span>
+    </div>
+
+    <div id="lesson-content-area">
+      <!-- Filled by JS -->
+      <div style="padding:60px 0;text-align:center;color:var(--muted)">Đang tải bài học...</div>
+    </div>
+  </main>
+</div>
+
+<!-- Complete toast -->
+<div class="complete-toast" id="complete-toast">Đã hoàn thành bài học!</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  const COURSES_API = 'http://localhost:8000/courses/api';
+
+  // URL: /courses/<courseId>/lessons/<lessonId>/
+  const parts    = window.location.pathname.split('/').filter(Boolean);
+  const courseId = parts[1];
+  const lessonId = parts[3];
+
+  let allLessons   = [];
+  let progressMap  = {};
+  let courseTitle  = '';
+
+  Auth.requireAuth();
+  buildNavbar('courses');
+
+  // ── Load tất cả ───────────────────────────────────────────
+  async function init() {
+    await Promise.all([loadLessons(), loadProgress()]);
+    loadLesson();
+  }
+
+  async function loadLessons() {
+    try {
+      const res = await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/lessons/`);
+      if (!res) return;
+      allLessons = await res.json();
+
+      // Get course title
+      const cRes   = await fetch(`${COURSES_API}/${courseId}/`);
+      const cData  = await cRes.json();
+      courseTitle  = cData.title || 'Khóa học';
+      document.getElementById('sidebar-course-title').textContent = courseTitle;
+      document.getElementById('bc-course').textContent = courseTitle;
+      document.getElementById('bc-course').href        = `/courses/${courseId}/`;
+
+      renderSidebar();
+    } catch {}
+  }
+
+  async function loadProgress() {
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/progress/`);
+      if (!res) return;
+      const data = await res.json();
+
+      progressMap = {};
+      (data.lessons || []).forEach(l => { progressMap[l.lesson_id] = l.status; });
+
+      document.getElementById('sb-completed').textContent = data.completed;
+      document.getElementById('sb-total').textContent     = data.total;
+      document.getElementById('sb-pct').textContent       = `${data.percentage}%`;
+      document.getElementById('sb-bar').style.width       = `${data.percentage}%`;
+    } catch {}
+  }
+
+  function renderSidebar() {
+    const el = document.getElementById('sidebar-lessons');
+    el.innerHTML = allLessons.map((l, i) => {
+      const status = progressMap[l.id] || 'not_started';
+      const isActive = l.id === lessonId;
+      const isDone   = status === 'completed';
+      const cls = [isActive ? 'active' : '', l.is_locked ? 'locked' : ''].join(' ');
+      return `
+        <a href="/courses/${courseId}/lessons/${l.id}/"
+           class="sidebar-lesson ${cls}"
+           ${l.is_locked ? 'onclick="return false"' : ''}>
+          <div class="sl-num ${isDone ? 'done' : ''} ${isActive ? 'active' : ''}">
+            ${isDone ? '✓' : i + 1}
+          </div>
+          <div class="sl-info">
+            <div class="sl-title">${l.title}</div>
+            <div class="sl-meta">${l.video_url ? 'Video' : 'Bài đọc'}</div>
+          </div>
+        </a>`;
+    }).join('');
+  }
+
+  // ── Load lesson detail ────────────────────────────────────
+  async function loadLesson() {
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/lessons/${lessonId}/`);
+      if (!res) return;
+      const l = await res.json();
+
+      document.title = `${l.title} — SmartLearn`;
+      document.getElementById('bc-lesson').textContent = l.title;
+
+      const isCompleted = (progressMap[l.id] || 'not_started') === 'completed';
+
+      // Lấy lesson hiện tại và bài trước/sau
+      const idx  = allLessons.findIndex(x => x.id === l.id);
+      const prev = idx > 0 ? allLessons[idx - 1] : null;
+      const next = idx >= 0 && idx < allLessons.length - 1 ? allLessons[idx + 1] : null;
+
+      // YouTube embed
+      const videoHtml = l.video_url ? `
+        <div class="video-wrap animate-up">
+          <iframe src="${getYoutubeEmbed(l.video_url)}"
+                  allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope"></iframe>
+        </div>` : '';
+
+      document.getElementById('lesson-content-area').innerHTML = `
+        <h1 class="lesson-title animate-up">${l.title}</h1>
+        ${videoHtml}
+        <div class="lesson-content animate-up delay-1">${l.content || '<p style="color:var(--muted)">Bài học chưa có nội dung.</p>'}</div>
+        <div class="lesson-nav animate-up delay-2">
+          <div style="display:flex;gap:10px">
+            ${prev ? `<a href="/courses/${courseId}/lessons/${prev.id}/" class="btn btn-outline">← Bài trước</a>` : '<div></div>'}
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="lesson-complete-btn ${isCompleted ? 'done' : ''}"
+                    id="btn-complete"
+                    onclick="markComplete()"
+                    ${isCompleted ? 'disabled' : ''}>
+              ${isCompleted ? 'Đã hoàn thành' : '✓ Đánh dấu hoàn thành'}
+            </button>
+            ${next ? `<a href="/courses/${courseId}/lessons/${next.id}/" class="btn btn-primary">Bài tiếp →</a>` : ''}
+          </div>
+        </div>
+      `;
+    } catch {
+      document.getElementById('lesson-content-area').innerHTML =
+        '<div style="text-align:center;color:var(--muted);padding:60px 0">Lỗi tải bài học.</div>';
+    }
+  }
+
+  // ── Convert YouTube URL to embed ──────────────────────────
+  function getYoutubeEmbed(url) {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+    if (match) return `https://www.youtube.com/embed/${match[1]}`;
+    return url;
+  }
+
+  // ── Mark complete ─────────────────────────────────────────
+  async function markComplete() {
+    const btn = document.getElementById('btn-complete');
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+
+    try {
+      const res  = await Auth.fetchWithAuth(
+        `${COURSES_API}/${courseId}/lessons/${lessonId}/complete/`,
+        { method: 'POST' }
+      );
+      if (res?.ok) {
+        btn.textContent = 'Đã hoàn thành';
+        btn.classList.add('done');
+
+        // Show toast
+        const toast = document.getElementById('complete-toast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+
+        // Reload progress
+        await loadProgress();
+        renderSidebar();
+      }
+    } catch {}
+  }
+
+  init();
+</script>
+</body>
+</html>

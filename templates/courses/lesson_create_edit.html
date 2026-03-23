@@ -1,0 +1,356 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tạo bài học — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <style>
+    .create-page { min-height: 100vh; padding-top: 88px; padding-bottom: 60px; }
+    .create-wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+
+    .breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--muted); margin-bottom: 32px; flex-wrap: wrap;
+    }
+    .breadcrumb a { color: var(--text2); transition: color 0.2s; }
+    .breadcrumb a:hover { color: var(--accent); }
+    .breadcrumb-sep { opacity: 0.4; }
+
+    .page-icon {
+      width: 60px; height: 60px; border-radius: 16px;
+      background: linear-gradient(135deg, rgba(74,222,128,0.12), rgba(34,211,238,0.12));
+      border: 1px solid rgba(74,222,128,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; margin-bottom: 20px;
+    }
+    .page-title { font-family: var(--font-display); font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+    .page-sub   { color: var(--text2); font-size: 14px; margin-bottom: 36px; }
+
+    .form-section {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 20px;
+    }
+    .form-section-title {
+      font-family: var(--font-display); font-size: 15px; font-weight: 700;
+      margin-bottom: 20px; padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    textarea.form-input { padding-left: 16px; min-height: 200px; resize: vertical; line-height: 1.7; }
+
+    /* Video preview */
+    .video-preview-wrap {
+      margin-top: 12px; border-radius: var(--radius); overflow: hidden;
+      background: var(--bg2); display: none;
+    }
+    .video-preview-wrap.show { display: block; }
+    .video-preview-wrap iframe {
+      width: 100%; aspect-ratio: 16/9; border: 0; display: block;
+    }
+
+    /* Order + Lock row */
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 560px) { .form-row-2 { grid-template-columns: 1fr; } }
+
+    /* Toggle switch */
+    .toggle-wrap { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+    .toggle-label { font-size: 14px; color: var(--text2); }
+    .toggle-desc  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .toggle-switch {
+      position: relative; width: 44px; height: 24px; flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: var(--border2);
+      border-radius: 24px; cursor: pointer; transition: background 0.3s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute;
+      width: 18px; height: 18px; left: 3px; bottom: 3px;
+      background: white; border-radius: 50%; transition: transform 0.3s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 8px; }
+
+    /* Danger zone */
+    .danger-zone {
+      border: 1px solid rgba(248,113,113,0.2); border-radius: var(--radius-lg);
+      padding: 24px 28px; margin-top: 8px; background: rgba(248,113,113,0.03);
+    }
+    .danger-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--danger); margin-bottom: 8px; }
+    .danger-desc  { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+
+    .nav-logo-img { height: 60px; width: auto; object-fit: contain; display: block; }
+    .nav-logo { display: flex; align-items: center; }
+    .nav-logo-text { margin-left: -20px; }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-green"></div>
+  <div class="orb orb-cyan"></div>
+</div>
+
+<nav class="navbar z1">
+  <a href="/" class="nav-logo">
+    <img src="{% static 'images/smart_learn_logo.png' %}" alt="SmartLearn" class="nav-logo-img">
+    <span class="nav-logo-text">SmartLearn</span>
+  </a>
+  <div class="nav-links" id="navbar-links"></div>
+</nav>
+
+<div class="create-page z1">
+  <div class="create-wrap">
+
+    <div class="breadcrumb animate-up">
+      <a href="/">Trang chủ</a>
+      <span class="breadcrumb-sep">›</span>
+      <a href="/courses/">Khóa học</a>
+      <span class="breadcrumb-sep">›</span>
+      <a href="#" id="bc-course">Đang tải...</a>
+      <span class="breadcrumb-sep">›</span>
+      <span id="bc-action">Thêm bài học</span>
+    </div>
+
+    <h1 class="page-title animate-up delay-1" id="page-title">Thêm bài học mới</h1>
+    <p class="page-sub animate-up delay-1"   id="page-sub">Tạo nội dung bài học cho khóa học của bạn.</p>
+
+    <div class="alert" id="form-alert"></div>
+
+    <!-- Thông tin cơ bản -->
+    <div class="form-section animate-up delay-2">
+      <div class="form-section-title">Thông tin bài học</div>
+
+      <div class="form-group">
+        <label class="form-label">Tên bài học <span style="color:var(--danger)">*</span></label>
+        <div class="input-wrap">
+          <input type="text" id="title" class="form-input" placeholder="Ví dụ: Bài 1 — Giới thiệu hàm số" />
+        </div>
+        <div class="error-text" id="title-err">Vui lòng nhập tên bài học.</div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">Thứ tự bài học</label>
+          <div class="input-wrap">
+            <span class="input-icon">#</span>
+            <input type="number" id="order_index" class="form-input" placeholder="1" min="0" value="0" />
+          </div>
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;padding-top:28px">
+          <div class="toggle-wrap" style="flex:1;padding:0">
+            <div>
+              <div class="toggle-label">Khóa bài học</div>
+              <div class="toggle-desc">Học sinh phải hoàn thành bài trước</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="is_locked" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nội dung -->
+    <div class="form-section animate-up delay-2">
+      <div class="form-section-title">Nội dung bài học</div>
+      <div class="form-group">
+        <label class="form-label">Nội dung</label>
+        <textarea id="content" class="form-input no-icon"
+                  placeholder="Nhập nội dung bài học... Bạn có thể dùng <b>bold</b>, <i>italic</i>, <ul><li>danh sách</li></ul>"></textarea>
+      </div>
+    </div>
+
+    <!-- Video -->
+    <div class="form-section animate-up delay-3">
+      <div class="form-section-title">Video YouTube (tuỳ chọn)</div>
+      <div class="form-group">
+        <label class="form-label">Link YouTube</label>
+        <div class="input-wrap">
+          <input type="url" id="video_url" class="form-input"
+                 placeholder="https://www.youtube.com/watch?v=..."
+                 oninput="previewVideo(this.value)" />
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">
+          Hỗ trợ: youtube.com/watch?v=... hoặc youtu.be/...
+        </div>
+      </div>
+      <div class="video-preview-wrap" id="video-preview">
+        <iframe id="video-iframe" allowfullscreen
+                allow="accelerometer; autoplay; encrypted-media; gyroscope"></iframe>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="form-actions animate-up delay-3">
+      <a href="#" class="btn btn-ghost" id="btn-cancel">Hủy</a>
+      <button class="btn btn-primary" id="btn-submit" onclick="handleSubmit()" style="min-width:160px">
+        <span class="btn-text" id="submit-text">Thêm bài học</span>
+        <div class="spinner"></div>
+      </button>
+    </div>
+
+    <!-- Danger zone (chỉ hiện khi edit) -->
+    <div class="danger-zone animate-up" id="danger-zone" style="display:none">
+      <div class="danger-title">Vùng nguy hiểm</div>
+      <p class="danger-desc">Xóa bài học sẽ xóa toàn bộ dữ liệu tiến độ học của bài này. Không thể hoàn tác.</p>
+      <button class="btn btn-danger" onclick="deleteLesson()">Xóa bài học</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  const COURSES_API = 'http://localhost:8000/courses/api';
+
+  // URL pattern:
+  //   create: /courses/<courseId>/lessons/new/
+  //   edit:   /courses/<courseId>/lessons/<lessonId>/edit/
+  const parts    = window.location.pathname.split('/').filter(Boolean);
+  const isEdit   = parts.includes('edit');
+  const courseId = parts[1];
+  const lessonId = isEdit ? parts[3] : null;
+
+  buildNavbar('courses');
+
+  // Chỉ teacher/admin mới vào được
+  const currentUser = Auth.getUser();
+  if (!Auth.isLoggedIn() || (currentUser?.role !== 'teacher' && currentUser?.role !== 'admin')) {
+    window.location.href = '/courses/';
+  }
+
+  // ── Breadcrumb & cancel link ──────────────────────────────
+  document.getElementById('btn-cancel').href = `/courses/${courseId}/`;
+
+  // ── Load course name cho breadcrumb ──────────────────────
+  async function loadCourseName() {
+    try {
+      const res  = await fetch(`${COURSES_API}/${courseId}/`);
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('bc-course').textContent = data.title;
+        document.getElementById('bc-course').href        = `/courses/${courseId}/`;
+      }
+    } catch {}
+  }
+  loadCourseName();
+
+  // ── Edit mode ─────────────────────────────────────────────
+  if (isEdit && lessonId) {
+    document.getElementById('page-title').textContent        = 'Chỉnh sửa bài học';
+    document.getElementById('page-sub').textContent          = 'Cập nhật nội dung bài học.';
+    document.getElementById('bc-action').textContent         = 'Chỉnh sửa';
+    document.getElementById('submit-text').textContent       = 'Lưu thay đổi';
+    document.getElementById('danger-zone').style.display     = 'block';
+    loadLessonData();
+  }
+
+  async function loadLessonData() {
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/lessons/${lessonId}/`);
+      const data = await res.json();
+      if (!res.ok) return;
+
+      document.getElementById('title').value       = data.title       || '';
+      document.getElementById('content').value     = data.content     || '';
+      document.getElementById('video_url').value   = data.video_url   || '';
+      document.getElementById('order_index').value = data.order_index ?? 0;
+      document.getElementById('is_locked').checked = data.is_locked   || false;
+
+      if (data.video_url) previewVideo(data.video_url);
+    } catch {}
+  }
+
+  // ── YouTube preview ───────────────────────────────────────
+  function getYoutubeId(url) {
+    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+    return m ? m[1] : null;
+  }
+
+  function previewVideo(url) {
+    const wrap   = document.getElementById('video-preview');
+    const iframe = document.getElementById('video-iframe');
+    const vid    = getYoutubeId(url);
+    if (vid) {
+      iframe.src = `https://www.youtube.com/embed/${vid}`;
+      wrap.classList.add('show');
+    } else {
+      iframe.src = '';
+      wrap.classList.remove('show');
+    }
+  }
+
+  // ── Submit ────────────────────────────────────────────────
+  async function handleSubmit() {
+    const title = document.getElementById('title').value.trim();
+    hideAlert('form-alert');
+    setFieldError('title', 'title-err', !title, 'Vui lòng nhập tên bài học.');
+    if (!title) return;
+
+    const payload = {
+      title,
+      content:     document.getElementById('content').value.trim(),
+      video_url:   document.getElementById('video_url').value.trim(),
+      order_index: parseInt(document.getElementById('order_index').value) || 0,
+      is_locked:   document.getElementById('is_locked').checked,
+    };
+
+    setLoading('btn-submit', true);
+    try {
+      const url    = isEdit
+        ? `${COURSES_API}/${courseId}/lessons/${lessonId}/`
+        : `${COURSES_API}/${courseId}/lessons/`;
+      const method = isEdit ? 'PATCH' : 'POST';
+
+      const res  = await Auth.fetchWithAuth(url, {
+        method,
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        showAlert('form-alert',
+          isEdit ? 'Cập nhật bài học thành công!' : 'Thêm bài học thành công!',
+          'success'
+        );
+        setTimeout(() => window.location.href = `/courses/${courseId}/`, 1200);
+      } else {
+        const msg = Object.values(data).flat().join(' ') || 'Có lỗi xảy ra.';
+        showAlert('form-alert', `${msg}`, 'error');
+      }
+    } catch {
+      showAlert('form-alert', 'Lỗi kết nối.', 'error');
+    } finally {
+      setLoading('btn-submit', false);
+    }
+  }
+
+  // ── Delete ────────────────────────────────────────────────
+  async function deleteLesson() {
+    if (!confirm('Bạn chắc chắn muốn xóa bài học này?')) return;
+    try {
+      const res  = await Auth.fetchWithAuth(
+        `${COURSES_API}/${courseId}/lessons/${lessonId}/`,
+        { method: 'DELETE' }
+      );
+      if (res.ok) {
+        window.location.href = `/courses/${courseId}/`;
+      } else {
+        const data = await res.json();
+        showAlert('form-alert', `${data.error}`, 'error');
+      }
+    } catch {
+      showAlert('form-alert', 'Lỗi kết nối.', 'error');
+    }
+  }
+</script>
+</body>
+</html>

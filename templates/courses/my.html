@@ -1,0 +1,313 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Khóa học của tôi — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <style>
+    .page-header { padding: 48px 0 32px; margin-bottom: 32px; border-bottom: 1px solid var(--border); }
+    .page-title { font-family: var(--font-display); font-size: 30px; font-weight: 800; margin-bottom: 6px; }
+    .page-sub   { color: var(--text2); font-size: 14px; }
+
+    /* Tabs */
+    .view-tabs {
+      display: flex; gap: 4px; margin-bottom: 28px;
+      background: rgba(255,255,255,0.03); border-radius: 12px; padding: 4px;
+      width: fit-content;
+    }
+    .view-tab {
+      padding: 9px 20px; border: none; background: transparent;
+      color: var(--text2); font-family: var(--font-display); font-size: 13px; font-weight: 600;
+      border-radius: 10px; cursor: pointer; transition: all 0.2s;
+    }
+    .view-tab.active { background: var(--panel2); color: var(--text); }
+
+    /* Course card — horizontal for "my courses" list */
+    .my-course-list { display: flex; flex-direction: column; gap: 16px; }
+    .my-course-card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 0; overflow: hidden;
+      display: flex; gap: 0; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .my-course-card:hover { border-color: var(--border2); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+
+    .my-course-thumb {
+      width: 160px; flex-shrink: 0; min-height: 120px;
+      background: linear-gradient(135deg, var(--bg2), var(--panel2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px; overflow: hidden;
+    }
+    .my-course-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .my-course-body {
+      flex: 1; padding: 20px 24px;
+      display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+    }
+    .my-course-info { flex: 1; min-width: 0; }
+    .my-course-subject { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 4px; }
+    .my-course-title {
+      font-family: var(--font-display); font-size: 16px; font-weight: 700;
+      margin-bottom: 8px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .my-course-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    /* Progress for student */
+    .my-course-progress { min-width: 160px; }
+    .progress-wrap { background: rgba(255,255,255,0.07); border-radius: 4px; height: 6px; margin-top: 6px; }
+    .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 1s ease; }
+    .progress-label-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+
+    /* Actions */
+    .my-course-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+
+    /* Teacher stats */
+    .teacher-stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+      gap: 16px; margin-bottom: 32px;
+    }
+    .teacher-stat {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; text-align: center;
+    }
+    .teacher-stat-num { font-family: var(--font-display); font-size: 28px; font-weight: 800; }
+    .teacher-stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+    /* Empty */
+    .empty-state { text-align: center; padding: 64px 24px; }
+    .empty-icon  { font-size: 52px; margin-bottom: 16px; opacity: 0.4; }
+    .empty-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text2); }
+    .empty-desc  { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+
+    @media (max-width: 600px) {
+      .my-course-thumb { width: 100%; height: 140px; min-height: unset; }
+      .my-course-card  { flex-direction: column; }
+    }
+
+    .nav-logo-img { height: 60px; width: auto; object-fit: contain; display: block; }
+    .nav-logo { display: flex; align-items: center; }
+    .nav-logo-text { margin-left: -30px; }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-green"></div>
+  <div class="orb orb-cyan"></div>
+</div>
+
+<nav class="navbar z1">
+  <a href="/" class="nav-logo">
+    <img src="{% static 'images/smart_learn_logo.png' %}" alt="SmartLearn" class="nav-logo-img">
+    <span class="nav-logo-text">SmartLearn</span>
+  </a>
+  <div class="nav-links" id="navbar-links"></div>
+</nav>
+
+<div class="page z1">
+  <div class="page-inner-wide">
+
+    <div class="page-header animate-up">
+      <h1 class="page-title" id="page-title">Khóa học của tôi</h1>
+      <p class="page-sub"  id="page-sub">Đang tải...</p>
+    </div>
+
+    <!-- Teacher stats (chỉ hiện với teacher) -->
+    <div id="teacher-stats" style="display:none" class="animate-up delay-1">
+      <div class="teacher-stats-grid">
+        <div class="teacher-stat">
+          <div class="teacher-stat-num green" style="color:var(--accent)" id="stat-courses">0</div>
+          <div class="teacher-stat-label">Khóa học đã tạo</div>
+        </div>
+        <div class="teacher-stat">
+          <div class="teacher-stat-num" style="color:var(--accent2)" id="stat-students">0</div>
+          <div class="teacher-stat-label">Tổng học sinh</div>
+        </div>
+        <div class="teacher-stat">
+          <div class="teacher-stat-num" style="color:var(--accent3)" id="stat-lessons">0</div>
+          <div class="teacher-stat-label">Tổng bài học</div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-bottom:20px">
+        <a href="/courses/create/" class="btn btn-primary">Tạo khóa học mới</a>
+      </div>
+    </div>
+
+    <!-- Tabs (student only) -->
+    <div id="student-tabs" style="display:none" class="animate-up delay-1">
+      <div class="view-tabs">
+        <button class="view-tab active" id="tab-enrolled" onclick="switchTab('enrolled')">Đang học</button>
+        <button class="view-tab" id="tab-all" onclick="switchTab('all')">Khám phá thêm</button>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div id="courses-list" class="my-course-list animate-up delay-2">
+      <div style="padding:32px;text-align:center;color:var(--muted)">Đang tải...</div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  const COURSES_API = 'http://localhost:8000/courses/api';
+  const user = Auth.getUser();
+
+  Auth.requireAuth();
+  buildNavbar('courses');
+
+  const isTeacher = user?.role === 'teacher' || user?.role === 'admin';
+  const LEVEL_MAP = { basic: { label: 'Cơ bản', cls: 'badge-green' }, intermediate: { label: 'Trung bình', cls: 'badge-amber' }, advanced: { label: 'Nâng cao', cls: 'badge-cyan' } };
+  const SUBJECT_EMOJI = { 'Toán': '📐', 'Lý': '⚡', 'Hóa': '🧪', 'Văn': '📖', 'Anh': '🌍' };
+
+  function getEmoji(s) {
+    for (const [k, e] of Object.entries(SUBJECT_EMOJI)) if (s?.includes(k)) return e;
+    return '📚';
+  }
+
+  // ── Init ──────────────────────────────────────────────────
+  if (isTeacher) {
+    document.getElementById('page-title').textContent = 'Khóa học của tôi';
+    document.getElementById('page-sub').textContent   = 'Quản lý các khóa học bạn đã tạo';
+    document.getElementById('teacher-stats').style.display = 'block';
+    loadTeacherCourses();
+  } else {
+    document.getElementById('page-title').textContent = 'Khóa học của tôi';
+    document.getElementById('page-sub').textContent   = 'Theo dõi tiến độ các khóa học đang học';
+    document.getElementById('student-tabs').style.display = 'block';
+    loadStudentCourses();
+  }
+
+  // ── Teacher ───────────────────────────────────────────────
+  async function loadTeacherCourses() {
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/my/`);
+      if (!res) return;
+      const data = await res.json();
+
+      // Stats
+      const totalStudents = data.reduce((s, c) => s + c.student_count, 0);
+      const totalLessons  = data.reduce((s, c) => s + c.lesson_count,  0);
+      document.getElementById('stat-courses').textContent  = data.length;
+      document.getElementById('stat-students').textContent = totalStudents;
+      document.getElementById('stat-lessons').textContent  = totalLessons;
+
+      renderTeacherList(data);
+    } catch {
+      document.getElementById('courses-list').innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px">Lỗi tải dữ liệu.</div>';
+    }
+  }
+
+  function renderTeacherList(courses) {
+    const el = document.getElementById('courses-list');
+    if (!courses.length) {
+      el.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <div class="empty-title">Chưa có khóa học nào</div>
+          <div class="empty-desc">Bắt đầu tạo khóa học đầu tiên của bạn!</div>
+          <a href="/courses/create/" class="btn btn-primary">Tạo khóa học</a>
+        </div>`;
+      return;
+    }
+    el.innerHTML = courses.map(c => {
+      const level = LEVEL_MAP[c.level] || { label: c.level, cls: 'badge-muted' };
+      const thumb = c.thumbnail_url
+        ? `<img src="${c.thumbnail_url}" alt="${c.title}" />`
+        : `<span>${getEmoji(c.subject)}</span>`;
+      const statusCls = { public: 'badge-green', private: 'badge-amber', pending: 'badge-muted' }[c.status] || 'badge-muted';
+      const statusLbl = { public: 'Công khai', private: 'Riêng tư', pending: 'Nháp' }[c.status] || c.status;
+      return `
+        <div class="my-course-card">
+          <div class="my-course-thumb">${thumb}</div>
+          <div class="my-course-body">
+            <div class="my-course-info">
+              <div class="my-course-subject">${c.subject || 'Chung'}</div>
+              <div class="my-course-title">${c.title}</div>
+              <div class="my-course-meta">
+                <span class="badge ${level.cls}">${level.label}</span>
+                <span class="badge ${statusCls}">${statusLbl}</span>
+                <span class="badge badge-muted">${c.student_count} học sinh</span>
+                <span class="badge badge-muted">${c.lesson_count} bài</span>
+              </div>
+            </div>
+            <div class="my-course-actions">
+              <a href="/courses/${c.id}/" class="btn btn-outline" style="font-size:12px;padding:7px 14px">Xem</a>
+              <a href="/courses/${c.id}/edit/" class="btn btn-ghost" style="font-size:12px;padding:7px 14px">Sửa</a>
+              <a href="/courses/${c.id}/lessons/new/" class="btn btn-primary" style="font-size:12px;padding:7px 14px">＋ Bài học</a>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Student ───────────────────────────────────────────────
+  async function loadStudentCourses() {
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/my/`);
+      if (!res) return;
+      const data = await res.json();
+      renderStudentList(data);
+    } catch {
+      document.getElementById('courses-list').innerHTML = '<div style="text-align:center;color:var(--muted);padding:32px">Lỗi tải dữ liệu.</div>';
+    }
+  }
+
+  function renderStudentList(courses) {
+    const el = document.getElementById('courses-list');
+    if (!courses.length) {
+      el.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <div class="empty-title">Chưa đăng ký khóa học nào</div>
+          <div class="empty-desc">Khám phá và đăng ký khóa học để bắt đầu học tập!</div>
+          <a href="/courses/" class="btn btn-primary">Khám phá khóa học</a>
+        </div>`;
+      return;
+    }
+    el.innerHTML = courses.map(c => {
+      const level = LEVEL_MAP[c.level] || { label: c.level, cls: 'badge-muted' };
+      const thumb = c.thumbnail_url
+        ? `<img src="${c.thumbnail_url}" alt="${c.title}" />`
+        : `<span>${getEmoji(c.subject)}</span>`;
+      const pct = c.progress_pct || 0;
+      return `
+        <div class="my-course-card">
+          <div class="my-course-thumb">${thumb}</div>
+          <div class="my-course-body">
+            <div class="my-course-info">
+              <div class="my-course-subject">${c.subject || 'Chung'}</div>
+              <div class="my-course-title">${c.title}</div>
+              <div class="my-course-meta">
+                <span class="badge ${level.cls}">${level.label}</span>
+                <span class="badge badge-muted">${c.teacher?.full_name || c.teacher?.username}</span>
+                <span class="badge badge-muted">${c.lesson_count} bài học</span>
+              </div>
+            </div>
+            <div class="my-course-progress">
+              <div class="progress-label-row">
+                <span>Tiến độ</span><span style="color:var(--accent);font-weight:600">${pct}%</span>
+              </div>
+              <div class="progress-wrap">
+                <div class="progress-fill" style="width:${pct}%"></div>
+              </div>
+            </div>
+            <div class="my-course-actions">
+              <a href="/courses/${c.id}/" class="btn btn-primary" style="font-size:12px;padding:8px 16px">▶ Học tiếp</a>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function switchTab(tab) {
+    ['enrolled','all'].forEach(t => document.getElementById(`tab-${t}`).classList.toggle('active', t === tab));
+    if (tab === 'all') window.location.href = '/courses/';
+    else loadStudentCourses();
+  }
+</script>
+</body>
+</html>

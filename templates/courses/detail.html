@@ -1,0 +1,724 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chi tiết khóa học — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <style>
+    /* ── Hero ── */
+    .course-hero {
+      background: linear-gradient(135deg, rgba(74,222,128,0.06), rgba(34,211,238,0.04));
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 40px; margin-bottom: 32px; position: relative; overflow: hidden;
+    }
+    .course-hero::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(74,222,128,0.08), transparent 70%);
+      pointer-events: none;
+    }
+    .hero-layout { display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: start; }
+    @media (max-width: 680px) { .hero-layout { grid-template-columns: 1fr; } }
+
+    .course-subject-label {
+      font-size: 12px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 1.5px; color: var(--accent); margin-bottom: 12px;
+    }
+    .course-hero-title {
+      font-family: var(--font-display); font-size: 28px; font-weight: 800;
+      margin-bottom: 12px; letter-spacing: -0.3px; line-height: 1.3;
+    }
+    .course-hero-desc { color: var(--text2); font-size: 15px; line-height: 1.7; margin-bottom: 24px; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px; }
+
+    .teacher-mini {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); border-radius: var(--radius);
+    }
+    .teacher-mini-avatar {
+      width: 40px; height: 40px; border-radius: 10px; overflow: hidden; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; color: #080c14;
+    }
+    .teacher-mini-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .teacher-mini-name { font-weight: 600; font-size: 14px; }
+    .teacher-mini-role { font-size: 12px; color: var(--muted); }
+
+    .hero-thumb {
+      width: 220px; height: 150px; border-radius: var(--radius);
+      overflow: hidden; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--bg2), var(--panel2));
+      display: flex; align-items: center; justify-content: center; font-size: 64px;
+    }
+    .hero-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ── Layout ── */
+    .detail-layout { display: grid; grid-template-columns: 1fr 300px; gap: 32px; }
+    @media (max-width: 860px) { .detail-layout { grid-template-columns: 1fr; } }
+
+    /* ── Action card ── */
+    .action-card {
+      position: sticky; top: 88px;
+      background: var(--panel); border: 1px solid var(--border2);
+      border-radius: var(--radius-lg); padding: 28px; min-width: 260px;
+    }
+    .action-price {
+      font-family: var(--font-display); font-size: 28px; font-weight: 800;
+      color: var(--accent); margin-bottom: 20px;
+    }
+    .action-info { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .action-info-item { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text2); }
+    .action-info-icon  { font-size: 16px; width: 20px; text-align: center; }
+    .btn-enroll-wrap   { display: flex; flex-direction: column; gap: 10px; }
+
+    /* ── Join code (Teacher only) ── */
+    .join-code-section {
+      margin-top: 20px; padding-top: 20px;
+      border-top: 1px solid var(--border); display: none;
+    }
+    .join-code-section.show { display: block; animation: fadeUp 0.3s ease; }
+    .join-code-label {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--text2); margin-bottom: 10px;
+    }
+    .join-code-display {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(74,222,128,0.06); border: 1px solid rgba(74,222,128,0.2);
+      border-radius: var(--radius); padding: 12px 16px; margin-bottom: 10px;
+    }
+    .join-code-value {
+      font-family: var(--font-display); font-size: 22px; font-weight: 800;
+      color: var(--accent); letter-spacing: 4px; flex: 1; transition: color 0.4s;
+    }
+    .join-code-copy {
+      position: relative; background: none; border: none; cursor: pointer;
+      font-size: 18px; color: var(--text2); padding: 4px; transition: color 0.2s;
+    }
+    .join-code-copy:hover { color: var(--accent); }
+    .copy-tooltip {
+      position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+      background: var(--accent); color: #080c14; font-size: 11px; font-weight: 700;
+      padding: 3px 8px; border-radius: 6px; white-space: nowrap;
+      opacity: 0; transition: opacity 0.2s; pointer-events: none;
+    }
+    .copy-tooltip.show { opacity: 1; }
+    .join-code-actions { display: flex; gap: 8px; margin-bottom: 8px; }
+    .join-code-btn {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+      padding: 9px 10px; border-radius: var(--radius); font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      border: 1px solid var(--border2); background: transparent; color: var(--text2);
+      font-family: var(--font-body); text-decoration: none;
+    }
+    .join-code-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(74,222,128,0.05); }
+    .regen-btn {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: var(--muted); background: none; border: none;
+      cursor: pointer; padding: 0; font-family: var(--font-body); transition: color 0.2s;
+    }
+    .regen-btn:hover { color: var(--danger); }
+
+    /* ── Lesson list ── */
+    .section-title {
+      font-family: var(--font-display); font-size: 18px; font-weight: 700;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .lessons-list { display: flex; flex-direction: column; gap: 8px; }
+
+    /* ── Lesson item ── */
+    .lesson-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      transition: border-color 0.2s, background 0.2s;
+      text-decoration: none; color: inherit;
+    }
+    .lesson-item:not(.locked):hover {
+      border-color: var(--border2); background: rgba(255,255,255,0.04);
+    }
+    .lesson-item.locked { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+    .lesson-item.completed { border-color: rgba(74,222,128,0.2); }
+
+    .lesson-num {
+      width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+      background: rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: var(--text2);
+    }
+    .lesson-num.completed { background: rgba(74,222,128,0.15); color: var(--accent); }
+
+    .lesson-info { flex: 1; min-width: 0; }
+    .lesson-title-text {
+      font-size: 14px; font-weight: 500; margin-bottom: 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .lesson-meta  { font-size: 12px; color: var(--muted); }
+    .lesson-status-icon { font-size: 15px; flex-shrink: 0; color: var(--muted); }
+
+    /* Nút sửa bài học — chỉ hiện với teacher */
+    .lesson-edit-btn {
+      flex-shrink: 0; padding: 5px 10px; border-radius: 8px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--text2); font-size: 12px; font-weight: 500;
+      text-decoration: none; transition: all 0.2s; white-space: nowrap;
+      display: none; /* hiện bằng JS khi là owner */
+    }
+    .lesson-edit-btn:hover { border-color: var(--accent2); color: var(--accent2); background: rgba(34,211,238,0.06); }
+    .is-owner .lesson-edit-btn { display: flex; align-items: center; gap: 4px; }
+
+    /* ── Progress ── */
+    .progress-section {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px;
+    }
+    .progress-label { font-size: 13px; color: var(--text2); margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .progress-bar-wrap { background: rgba(255,255,255,0.07); border-radius: 4px; height: 8px; }
+    .progress-bar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 1s ease; }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--muted); margin-bottom: 28px;
+    }
+    .breadcrumb a { color: var(--text2); transition: color 0.2s; }
+    .breadcrumb a:hover { color: var(--accent); }
+    .breadcrumb-sep { opacity: 0.4; }
+
+    /* ── QR Modal ── */
+    .qr-modal-overlay {
+      position: fixed; inset: 0; z-index: 400;
+      background: rgba(8,12,20,0.85); backdrop-filter: blur(12px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .qr-modal-overlay.show { opacity: 1; pointer-events: all; }
+    .qr-modal {
+      background: var(--panel); border: 1px solid var(--border2);
+      border-radius: 28px; padding: 40px 36px; text-align: center;
+      max-width: 380px; width: 100%; position: relative;
+      transform: scale(0.92); transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .qr-modal-overlay.show .qr-modal { transform: scale(1); }
+    .qr-modal-close {
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(255,255,255,0.07); border: none; color: var(--text2);
+      width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; transition: background 0.2s;
+    }
+    .qr-modal-close:hover { background: rgba(255,255,255,0.12); }
+    .qr-modal-title { font-family: var(--font-display); font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+    .qr-modal-desc  { color: var(--text2); font-size: 13px; margin-bottom: 24px; line-height: 1.6; }
+    .qr-image-wrap  { background: white; border-radius: 16px; padding: 16px; display: inline-block; margin-bottom: 16px; }
+    .qr-image-wrap img { width: 200px; height: 200px; display: block; border-radius: 4px; }
+    .qr-code-below  { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--accent); letter-spacing: 4px; margin-bottom: 20px; }
+    .qr-modal-actions { display: flex; gap: 10px; }
+    .qr-spinner { width: 200px; height: 200px; background: rgba(255,255,255,0.04); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .qr-spinner-inner {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 3px solid rgba(74,222,128,0.2); border-top-color: var(--accent);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .nav-logo-img { height: 60px; width: auto; object-fit: contain; display: block; }
+    .nav-logo { display: flex; align-items: center; }
+    .nav-logo-text { margin-left: -20px; }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-green"></div>
+  <div class="orb orb-cyan"></div>
+</div>
+
+<div class="qr-modal-overlay" id="qr-modal-overlay">
+  <div class="qr-modal">
+    <button class="qr-modal-close" onclick="closeQRModal()">✕</button>
+    <div class="qr-modal-title">Mã QR tham gia</div>
+    <p class="qr-modal-desc" id="qr-course-name">Học sinh quét mã này để tham gia khóa học</p>
+    <div class="qr-image-wrap" id="qr-image-wrap">
+      <div class="qr-spinner"><div class="qr-spinner-inner"></div></div>
+    </div>
+    <div class="qr-code-below" id="qr-code-text"></div>
+    <div class="qr-modal-actions">
+      <button class="btn btn-outline" style="flex:1;font-size:13px" onclick="downloadQR()">Tải QR</button>
+      <button class="btn btn-primary" style="flex:1;font-size:13px" onclick="copyJoinLink()">
+        <span id="copy-link-text">Copy link</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<nav class="navbar z1">
+  <a href="/" class="nav-logo">
+    <img src="{% static 'images/smart_learn_logo.png' %}" alt="SmartLearn" class="nav-logo-img">
+    <span class="nav-logo-text">SmartLearn</span>
+  </a>
+  <div class="nav-links" id="navbar-links"></div>
+</nav>
+
+<div class="page z1">
+  <div class="page-inner-wide">
+
+    <div class="breadcrumb animate-up">
+      <a href="/">Trang chủ</a>
+      <span class="breadcrumb-sep">›</span>
+      <a href="/courses/">Khóa học</a>
+      <span class="breadcrumb-sep">›</span>
+      <span id="bc-title">Đang tải...</span>
+    </div>
+
+    <div class="detail-layout">
+      <!-- ── Left ── -->
+      <div>
+        <div class="course-hero animate-up">
+          <div class="hero-layout">
+            <div>
+              <div class="course-subject-label" id="course-subject"></div>
+              <h1 class="course-hero-title"     id="course-title">Đang tải...</h1>
+              <p class="course-hero-desc"        id="course-desc"></p>
+              <div class="hero-meta"             id="hero-meta"></div>
+              <div class="teacher-mini"          id="teacher-mini"></div>
+            </div>
+            <div class="hero-thumb" id="hero-thumb">📚</div>
+          </div>
+        </div>
+
+        <div id="progress-section" style="display:none" class="animate-up delay-1">
+          <div class="progress-section">
+            <div class="progress-label">
+              <span>Tiến độ học tập</span>
+              <span id="progress-pct-text">0%</span>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="animate-up delay-2">
+          <div class="section-title">
+            Nội dung khóa học
+            <span class="badge badge-muted" id="lesson-count-badge">0 bài</span>
+          </div>
+          <div class="lessons-list" id="lessons-list">
+            <div style="padding:24px;text-align:center;color:var(--muted);font-size:14px">Đang tải bài học...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Right ── -->
+      <div>
+        <div class="action-card animate-up delay-1">
+          <div class="action-price">Miễn phí</div>
+          <div class="action-info" id="action-info"></div>
+          <div class="alert" id="enroll-alert"></div>
+          <div class="btn-enroll-wrap" id="enroll-actions">
+            <div style="text-align:center;color:var(--muted);font-size:13px">Đang tải...</div>
+          </div>
+          <div class="join-code-section" id="join-code-section">
+            <div class="join-code-label">Mã tham gia khóa học</div>
+            <div class="join-code-display">
+              <span class="join-code-value" id="join-code-value">········</span>
+              <button class="join-code-copy" onclick="copyCode()">
+                <div class="copy-tooltip" id="copy-tooltip">Đã sao chép!</div>
+              </button>
+            </div>
+            <div class="join-code-actions">
+              <button class="join-code-btn" onclick="openQRModal()">Xem QR</button>
+              <a class="join-code-btn" id="share-link-btn" href="#" onclick="copyShareLink(event)">Copy link</a>
+            </div>
+            <button class="regen-btn" onclick="regenCode()">Tạo mã mới</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  const COURSES_API = 'http://localhost:8000/courses/api';
+  const courseId    = window.location.pathname.split('/').filter(Boolean)[1];
+
+  let courseData = null;
+  let isOwner    = false;  // dùng để render lesson item
+  let joinCode   = '';
+  let joinUrl    = '';
+  let qrBase64   = '';
+  let qrLoaded   = false;
+
+  const LEVEL_LABEL = { basic: 'Cơ bản', intermediate: 'Trung bình', advanced: 'Nâng cao' };
+  const LEVEL_CLASS = { basic: 'badge-green', intermediate: 'badge-amber', advanced: 'badge-cyan' };
+
+  buildNavbar('courses');
+
+  // ════════════════════════════════════════
+  // LOAD COURSE
+  // ════════════════════════════════════════
+  async function loadCourse() {
+    try {
+      const res = Auth.isLoggedIn()
+        ? await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/`)
+        : await fetch(`${COURSES_API}/${courseId}/`);
+
+      const data = await res.json();
+      if (!res.ok) { document.getElementById('course-title').textContent = data.error || 'Không tìm thấy.'; return; }
+
+      courseData = data;
+
+      // Xác định owner một lần, dùng lại trong renderLessonItem
+      const user = Auth.getUser();
+      isOwner = data.teacher?.id === user?.id || user?.role === 'admin';
+
+      renderCourse(data);
+      initJoinCode(data);
+      loadLessons();
+      if (data.is_enrolled) loadProgress();
+    } catch {
+      console.error('loadCourse lỗi:', err.message, err.stack);
+      document.getElementById('course-title').textContent = 'Lỗi kết nối.';
+    }
+  }
+
+  // ════════════════════════════════════════
+  // RENDER COURSE
+  // ════════════════════════════════════════
+  function renderCourse(c) {
+    document.title = `${c.title} — SmartLearn`;
+    document.getElementById('bc-title').textContent       = c.title;
+    document.getElementById('course-subject').textContent = c.subject || 'Khóa học';
+    document.getElementById('course-title').textContent   = c.title;
+    document.getElementById('course-desc').textContent    = c.description || '';
+
+    document.getElementById('hero-meta').innerHTML = `
+      <span class="badge ${LEVEL_CLASS[c.level] || 'badge-muted'}">${LEVEL_LABEL[c.level] || c.level}</span>
+      <span class="badge badge-muted">👥 ${c.student_count} học sinh</span>
+      <span class="badge badge-muted">📄 ${c.lesson_count} bài học</span>
+    `;
+
+    if (c.thumbnail_url) {
+      document.getElementById('hero-thumb').innerHTML = `<img src="${c.thumbnail_url}" alt="${c.title}" />`;
+    }
+
+    const t = c.teacher;
+    document.getElementById('teacher-mini').innerHTML = `
+      <div class="teacher-mini-avatar">
+        ${t?.avatar_url ? `<img src="${t.avatar_url}" alt="" />` : (t?.full_name || t?.username || '?')[0].toUpperCase()}
+      </div>
+      <div>
+        <div class="teacher-mini-name">${t?.full_name || t?.username || '—'}</div>
+        <div class="teacher-mini-role">Giáo viên</div>
+      </div>
+    `;
+
+    document.getElementById('action-info').innerHTML = `
+      <div class="action-info-item"><span class="action-info-icon">📄</span>${c.lesson_count} bài học</div>
+      <div class="action-info-item"><span class="action-info-icon">👥</span>${c.student_count} học sinh đang học</div>
+      <div class="action-info-item"><span class="action-info-icon">📊</span>${LEVEL_LABEL[c.level] || c.level}</div>
+      <div class="action-info-item"><span class="action-info-icon">${c.status === 'public' ? '🔓' : '🔒'}</span>${c.status === 'public' ? 'Đăng ký ngay' : 'Cần được duyệt'}</div>
+    `;
+
+    renderEnrollActions(c);
+  }
+
+  // ════════════════════════════════════════
+  // ENROLL ACTIONS
+  // ════════════════════════════════════════
+  function renderEnrollActions(c) {
+    const user      = Auth.getUser();
+    const wrap      = document.getElementById('enroll-actions');
+    const isTeacher = user?.role === 'teacher';
+
+    if (isOwner) {
+      wrap.innerHTML = `
+        <a href="/courses/${c.id}/edit/" class="btn btn-outline btn-full">Chỉnh sửa khóa học</a>
+        <a href="/courses/${c.id}/lessons/new/" class="btn btn-primary btn-full">Thêm bài học</a>
+      `;
+      return;
+    }
+    if (isTeacher) {
+      wrap.innerHTML = `<div style="text-align:center;font-size:13px;color:var(--muted)">Giáo viên không đăng ký khóa học.</div>`;
+      return;
+    }
+    if (c.is_enrolled) {
+      document.getElementById('progress-section').style.display = 'block';
+
+      wrap.innerHTML = `
+        <a href="#" class="btn btn-primary btn-full" id="btn-continue">
+          <span>Đang tải...</span>
+        </a>
+        <button class="btn btn-danger btn-full" id="btn-unenroll" onclick="unenroll()" style="font-size:13px">
+          <span class="btn-text">Hủy đăng ký</span>
+          <div class="spinner"></div>
+        </button>
+      `;
+
+      loadContinueLesson();
+      return;
+    }
+    if (!Auth.isLoggedIn()) {
+      wrap.innerHTML = `
+        <a href="/accounts/login/?next=/courses/${c.id}/" class="btn btn-primary btn-full">
+          Đăng nhập để đăng ký
+        </a>
+      `;
+      return;
+    }
+    wrap.innerHTML = `
+      <button class="btn btn-primary btn-full" id="btn-enroll" onclick="enroll()">
+        <span class="btn-text">Đăng ký khóa học</span>
+        <div class="spinner"></div>
+      </button>
+    `;
+  }
+  async function loadContinueLesson() {
+    const btn = document.getElementById('btn-continue');
+    if (!btn) return;
+
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/progress/`);
+      if (!res) return;
+      const data = await res.json();
+
+      // Cập nhật progress bar
+      document.getElementById('progress-bar').style.width      = `${data.percentage}%`;
+      document.getElementById('progress-pct-text').textContent = `${data.percentage}%`;
+
+      const lessons = data.lessons || [];
+
+      const inProgress  = lessons.find(l => l.status === 'in_progress');
+      const notStarted  = lessons.find(l => l.status === 'not_started');
+      const lastLesson  = lessons[lessons.length - 1];
+
+      const target = inProgress || notStarted || lastLesson;
+
+      if (target) {
+        btn.href = `/courses/${courseId}/lessons/${target.lesson_id}/`;
+        btn.innerHTML = data.percentage === 0
+          ? '▶ Bắt đầu học'
+          : data.percentage === 100
+            ? 'Học lại từ đầu'
+            : `▶ Tiếp tục — Bài ${lessons.indexOf(target) + 1}`;
+      } else {
+        // Chưa có bài nào → vào trang danh sách bài
+        btn.href = `/courses/${courseId}/`;
+        btn.innerHTML = 'Xem danh sách bài';
+      }
+
+    } catch {
+      if (btn) {
+        btn.href      = `/courses/${courseId}/`;
+        btn.innerHTML = '▶ Vào học';
+      }
+    }
+  }
+
+
+  // ════════════════════════════════════════
+  // LESSONS
+  // ════════════════════════════════════════
+  async function loadLessons() {
+    const listEl = document.getElementById('lessons-list');
+    try {
+      const res = Auth.isLoggedIn()
+        ? await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/lessons/`)
+        : await fetch(`${COURSES_API}/${courseId}/lessons/`);
+
+      if (!res || res.status === 403) {
+        listEl.innerHTML = lockedLessonsHtml(); return;
+      }
+      const lessons = await res.json();
+      document.getElementById('lesson-count-badge').textContent = `${lessons.length} bài`;
+
+      if (!lessons.length) {
+        listEl.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted)">Chưa có bài học nào.</div>`;
+        return;
+      }
+
+      // Thêm class is-owner vào container để CSS hiện nút sửa
+      listEl.className = `lessons-list${isOwner ? ' is-owner' : ''}`;
+      listEl.innerHTML = lessons.map(renderLessonItem).join('');
+    } catch {
+      listEl.innerHTML = lockedLessonsHtml();
+    }
+  }
+
+  function lockedLessonsHtml() {
+    return `
+      <div style="padding:32px;text-align:center">
+        <div style="font-size:40px;margin-bottom:12px">🔒</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px">Đăng ký để xem bài học</div>
+        <div style="font-size:13px;color:var(--muted)">Bạn cần đăng ký khóa học để xem nội dung chi tiết.</div>
+      </div>`;
+  }
+
+  function renderLessonItem(l, index) {
+  const canAccess = true;  
+  const locked = l.is_locked && !isOwner && !courseData?.is_enrolled;
+  const href      = (!locked && canAccess) ? `/courses/${courseId}/lessons/${l.id}/` : '#';
+  const icon      = locked ? '🔒' : (isOwner ? '' : '▶');
+
+  return `
+    <a href="${href}" class="lesson-item${locked ? ' locked' : ''}"
+       ${locked ? 'onclick="return false"' : ''}>
+      <div class="lesson-num">${index + 1}</div>
+      <div class="lesson-info">
+        <div class="lesson-title-text">${l.title}</div>
+        <div class="lesson-meta">
+          ${l.video_url ? 'Có video' : 'Bài đọc'}
+          ${l.is_locked ? ' · Bài bị khóa' : ''}
+        </div>
+      </div>
+      ${icon ? `<span class="lesson-status-icon">${icon}</span>` : ''}
+      <a href="/courses/${courseId}/lessons/${l.id}/edit/"
+         class="lesson-edit-btn"
+         onclick="event.preventDefault();event.stopPropagation();window.location='/courses/${courseId}/lessons/${l.id}/edit/'">
+        Sửa
+      </a>
+    </a>`;
+}
+
+
+  async function enroll() {
+    if (!Auth.isLoggedIn()) { window.location.href = '/accounts/login/'; return; }
+    setLoading('btn-enroll', true);
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/enroll/`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        showAlert('enroll-alert', `✔  ${data.message}`, 'success');
+        setTimeout(() => loadCourse(), 1200);
+      } else {
+        showAlert('enroll-alert', `${data.error}`, 'error');
+        setLoading('btn-enroll', false);
+      }
+    } catch {
+      showAlert('enroll-alert', 'Lỗi kết nối.', 'error');
+      setLoading('btn-enroll', false);
+    }
+  }
+
+  async function unenroll() {
+    if (!confirm('Bạn có chắc muốn hủy đăng ký khóa học này?')) return;
+    setLoading('btn-unenroll', true);
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/enroll/`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        showAlert('enroll-alert', 'Đã hủy đăng ký.', 'success');
+        setTimeout(() => loadCourse(), 1000);
+      } else {
+        showAlert('enroll-alert', `${data.error}`, 'error');
+        setLoading('btn-unenroll', false);
+      }
+    } catch {
+      showAlert('enroll-alert', 'Lỗi kết nối.', 'error');
+      setLoading('btn-unenroll', false);
+    }
+  }
+
+  // ════════════════════════════════════════
+  // JOIN CODE
+  // ════════════════════════════════════════
+  function initJoinCode(course) {
+    if (!isOwner) return;
+    joinCode = course.join_code || '';
+    joinUrl  = `${window.location.origin}/courses/join/?code=${joinCode}`;
+    document.getElementById('join-code-section').classList.add('show');
+    document.getElementById('join-code-value').textContent = joinCode;
+    document.getElementById('share-link-btn').href         = joinUrl;
+    document.getElementById('qr-code-text').textContent    = joinCode;
+    document.getElementById('qr-course-name').textContent  = course.title || 'khóa học';
+  }
+
+  function copyCode() {
+    navigator.clipboard.writeText(joinCode).then(() => {
+      const tooltip = document.getElementById('copy-tooltip');
+      const icon    = document.getElementById('copy-icon-btn');
+      tooltip.classList.add('show'); icon.textContent = '✔ ';
+      setTimeout(() => { tooltip.classList.remove('show'); icon.textContent = '📋'; }, 2000);
+    });
+  }
+
+  function copyShareLink(e) {
+    e.preventDefault();
+    navigator.clipboard.writeText(joinUrl).then(() => {
+      const el = document.getElementById('share-link-btn');
+      el.textContent = 'Đã sao chép!';
+      setTimeout(() => { el.textContent = 'Copy link'; }, 2000);
+    });
+  }
+
+  async function openQRModal() {
+    document.getElementById('qr-modal-overlay').classList.add('show');
+    if (!qrLoaded) await loadQR();
+  }
+
+  async function loadQR() {
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/qr/`);
+      if (!res) return;
+      const data = await res.json();
+      qrBase64   = data.qr_base64; qrLoaded = true;
+      document.getElementById('qr-image-wrap').innerHTML =
+        `<img src="${qrBase64}" alt="QR" style="width:200px;height:200px;display:block;border-radius:4px;" />`;
+    } catch {
+      document.getElementById('qr-image-wrap').innerHTML =
+        '<div style="padding:20px;color:var(--muted);font-size:13px">Lỗi tải QR</div>';
+    }
+  }
+
+  function closeQRModal() {
+    document.getElementById('qr-modal-overlay').classList.remove('show');
+  }
+
+  document.getElementById('qr-modal-overlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeQRModal();
+  });
+
+  function downloadQR() {
+    if (!qrBase64) return;
+    const a = document.createElement('a');
+    a.href = qrBase64; a.download = `smartlearn-qr-${joinCode}.png`; a.click();
+  }
+
+  function copyJoinLink() {
+    navigator.clipboard.writeText(joinUrl).then(() => {
+      const btn = document.getElementById('copy-link-text');
+      btn.textContent = 'Đã sao chép!';
+      setTimeout(() => { btn.textContent = 'Copy link'; }, 2000);
+    });
+  }
+
+  async function regenCode() {
+    if (!confirm('Tạo mã mới sẽ vô hiệu hóa mã cũ. Bạn có chắc không?')) return;
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/regenerate-code/`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) return;
+      joinCode = data.join_code;
+      joinUrl  = `${window.location.origin}/courses/join/?code=${joinCode}`;
+      qrLoaded = false;
+      const el = document.getElementById('join-code-value');
+      el.style.color = 'var(--accent2)'; el.textContent = joinCode;
+      setTimeout(() => { el.style.color = 'var(--accent)'; }, 600);
+      document.getElementById('share-link-btn').href      = joinUrl;
+      document.getElementById('qr-code-text').textContent = joinCode;
+      document.getElementById('qr-image-wrap').innerHTML  =
+        '<div class="qr-spinner"><div class="qr-spinner-inner"></div></div>';
+    } catch {}
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQRModal(); });
+
+  loadCourse();
+</script>
+</body>
+</html>

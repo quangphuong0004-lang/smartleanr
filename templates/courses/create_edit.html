@@ -1,0 +1,646 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tạo khóa học — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <style>
+    .create-page { min-height: 100vh; padding-top: 88px; padding-bottom: 60px; }
+    .create-wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+
+    .breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--muted); margin-bottom: 32px;
+    }
+    .breadcrumb a { color: var(--text2); transition: color 0.2s; }
+    .breadcrumb a:hover { color: var(--accent); }
+    .breadcrumb-sep { opacity: 0.4; }
+
+    .page-icon {
+      width: 60px; height: 60px; border-radius: 16px;
+      background: linear-gradient(135deg, rgba(74,222,128,0.12), rgba(34,211,238,0.12));
+      border: 1px solid rgba(74,222,128,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; margin-bottom: 20px;
+    }
+    .page-title {
+      font-family: var(--font-display); font-size: 28px; font-weight: 800;
+      margin-bottom: 6px; letter-spacing: -0.3px;
+    }
+    .page-sub { color: var(--text2); font-size: 14px; margin-bottom: 36px; }
+
+    .form-section {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 20px;
+    }
+    .form-section-title {
+      font-family: var(--font-display); font-size: 15px; font-weight: 700;
+      margin-bottom: 20px; padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 560px) { .form-row-2 { grid-template-columns: 1fr; } }
+    textarea.form-input { padding-left: 16px; min-height: 120px; resize: vertical; line-height: 1.6; }
+
+    /* Thumbnail */
+    .thumb-upload {
+      border: 2px dashed var(--border2); border-radius: var(--radius);
+      padding: 28px; text-align: center; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .thumb-upload:hover { border-color: var(--accent); background: rgba(74,222,128,0.03); }
+    .thumb-upload.has-img { padding: 0; border-style: solid; }
+    .thumb-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .thumb-upload-icon { font-size: 36px; margin-bottom: 10px; }
+    .thumb-upload-text { font-size: 14px; color: var(--text2); margin-bottom: 4px; }
+    .thumb-upload-hint { font-size: 12px; color: var(--muted); }
+    .thumb-preview { width: 100%; height: 200px; object-fit: cover; display: block; border-radius: calc(var(--radius) - 2px); }
+    .thumb-remove {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(8,12,20,0.8); border: none; color: var(--text);
+      width: 28px; height: 28px; border-radius: 50%;
+      display: none; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 14px; z-index: 2;
+    }
+    .thumb-upload.has-img .thumb-remove { display: flex; }
+
+    /* Status */
+    .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .status-option { position: relative; }
+    .status-option input { position: absolute; opacity: 0; }
+    .status-label {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 14px 10px; background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      cursor: pointer; transition: all 0.2s; text-align: center;
+    }
+    .status-label-icon { font-size: 22px; }
+    .status-label-name { font-size: 13px; font-weight: 500; color: var(--text2); }
+    .status-label-desc { font-size: 11px; color: var(--muted); }
+    .status-option input:checked + .status-label { border-color: var(--accent); background: rgba(74,222,128,0.06); }
+    .status-option input:checked + .status-label .status-label-name { color: var(--accent); }
+
+    /* Actions */
+    .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 8px; }
+
+    /* Danger zone */
+    .danger-zone {
+      border: 1px solid rgba(248,113,113,0.2); border-radius: var(--radius-lg);
+      padding: 24px 28px; margin-top: 8px; background: rgba(248,113,113,0.03);
+    }
+    .danger-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--danger); margin-bottom: 8px; }
+    .danger-desc  { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+
+    /* ── Join code card ── */
+    .join-code-card {
+      background: linear-gradient(135deg, rgba(74,222,128,0.06), rgba(34,211,238,0.04));
+      border: 1px solid rgba(74,222,128,0.2);
+      border-radius: var(--radius-lg); padding: 24px 28px;
+      margin-bottom: 20px; display: none;
+    }
+    .join-code-card.show { display: block; animation: fadeUp 0.4s ease; }
+
+    .jc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .jc-title  { font-family: var(--font-display); font-size: 15px; font-weight: 700; }
+    .jc-badge  {
+      font-size: 11px; font-weight: 600; color: var(--accent);
+      background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2);
+      padding: 3px 8px; border-radius: 20px;
+    }
+    .jc-code-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .jc-code {
+      flex: 1; background: rgba(255,255,255,0.04); border: 1px solid var(--border2);
+      border-radius: var(--radius); padding: 14px 18px; text-align: center;
+      font-family: var(--font-display); font-size: 26px; font-weight: 800;
+      color: var(--accent); letter-spacing: 6px; transition: color 0.4s;
+    }
+    .jc-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .jc-action-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      padding: 12px 8px; background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      cursor: pointer; transition: all 0.2s; font-family: var(--font-body);
+      color: var(--text2); text-decoration: none;
+    }
+    .jc-action-btn:hover { border-color: var(--accent); background: rgba(74,222,128,0.05); color: var(--accent); }
+    .jc-action-icon  { font-size: 20px; }
+    .jc-action-label { font-size: 11px; font-weight: 600; }
+    .jc-regen {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--muted); background: none; border: none;
+      cursor: pointer; padding: 0; margin-top: 12px; font-family: var(--font-body);
+      transition: color 0.2s;
+    }
+    .jc-regen:hover { color: var(--danger); }
+
+    /* ── QR Popup ── */
+    .qr-popup-overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(8,12,20,0.88); backdrop-filter: blur(14px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .qr-popup-overlay.show { opacity: 1; pointer-events: all; }
+    .qr-popup {
+      background: var(--panel); border: 1px solid var(--border2);
+      border-radius: 28px; padding: 40px;
+      max-width: 420px; width: 100%; text-align: center; position: relative;
+      transform: translateY(24px) scale(0.95);
+      transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .qr-popup-overlay.show .qr-popup { transform: translateY(0) scale(1); }
+    .qr-popup-close {
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(255,255,255,0.07); border: none; color: var(--text2);
+      width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; transition: background 0.2s;
+    }
+    .qr-popup-close:hover { background: rgba(255,255,255,0.12); }
+    .qr-popup-title { font-family: var(--font-display); font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .qr-popup-sub   { color: var(--text2); font-size: 13px; margin-bottom: 28px; line-height: 1.6; }
+    .qr-frame {
+      background: white; border-radius: 20px; padding: 20px;
+      display: inline-block; margin-bottom: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .qr-frame img { width: 220px; height: 220px; display: block; border-radius: 4px; }
+    .qr-code-label {
+      font-family: var(--font-display); font-size: 22px; font-weight: 800;
+      color: var(--accent); letter-spacing: 5px; margin-bottom: 8px;
+    }
+    .qr-join-url { font-size: 12px; color: var(--muted); margin-bottom: 24px; word-break: break-all; }
+    .qr-popup-btns { display: flex; gap: 10px; }
+    .qr-loading {
+      width: 220px; height: 220px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.03); border-radius: 8px; margin: 0 auto;
+    }
+    .qr-loading-spin {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 3px solid rgba(74,222,128,0.2); border-top-color: var(--accent);
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .nav-logo-img { height: 60px; width: auto; object-fit: contain; display: block; }
+    .nav-logo { display: flex; align-items: center; }
+    .nav-logo-text { margin-left: -20px; }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-green"></div>
+  <div class="orb orb-cyan"></div>
+</div>
+
+<nav class="navbar z1">
+  <a href="/" class="nav-logo">
+    <img src="{% static 'images/smart_learn_logo.png' %}" alt="SmartLearn" class="nav-logo-img">
+    <span class="nav-logo-text">SmartLearn</span>
+  </a>
+  <div class="nav-links" id="navbar-links"></div>
+</nav>
+
+<div class="create-page z1">
+  <div class="create-wrap">
+
+    <div class="breadcrumb animate-up">
+      <a href="/">Trang chủ</a>
+      <span class="breadcrumb-sep">›</span>
+      <a href="/courses/">Khóa học</a>
+      <span class="breadcrumb-sep">›</span>
+      <span id="breadcrumb-action">Tạo mới</span>
+    </div>
+
+    <h1 class="page-title animate-up delay-1" id="page-title">Tạo khóa học mới</h1>
+    <p class="page-sub animate-up delay-1" id="page-sub">Điền đầy đủ thông tin để tạo khóa học cho học sinh của bạn.</p>
+
+    <div class="alert" id="form-alert"></div>
+
+    <!-- Section 1: Thông tin cơ bản -->
+    <div class="form-section animate-up delay-2">
+      <div class="form-section-title">Thông tin cơ bản</div>
+      <div class="form-group">
+        <label class="form-label">Tên khóa học <span style="color:var(--danger)">*</span></label>
+        <div class="input-wrap">
+          <input type="text" id="title" class="form-input" placeholder="Ví dụ: Toán lớp 10 — Hàm số & Đồ thị" />
+        </div>
+        <div class="error-text" id="title-err">Vui lòng nhập tên khóa học.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mô tả khóa học</label>
+        <textarea id="description" class="form-input no-icon"
+                  placeholder="Mô tả ngắn gọn về nội dung, mục tiêu của khóa học..."></textarea>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">Môn học</label>
+          <div class="input-wrap">
+            <input type="text" id="subject" class="form-input" placeholder="Toán, Lý, Hóa, Văn..." />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cấp độ</label>
+          <select id="level" class="form-input no-icon" style="padding-left:16px">
+            <option value="basic">Cơ bản</option>
+            <option value="intermediate">Trung bình</option>
+            <option value="advanced">Nâng cao</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Ảnh thumbnail -->
+    <div class="form-section animate-up delay-2">
+      <div class="form-section-title">Ảnh bìa khóa học</div>
+      <div class="thumb-upload" id="thumb-upload-area" onclick="document.getElementById('thumbnail').click()">
+        <input type="file" id="thumbnail" accept="image/*" onchange="previewThumb(this)" />
+        <div id="thumb-placeholder">
+          <div class="thumb-upload-text">Click để chọn ảnh bìa</div>
+          <div class="thumb-upload-hint">JPG, PNG — tối đa 5MB. Tỷ lệ 16:9 sẽ đẹp nhất.</div>
+        </div>
+        <img id="thumb-preview" class="thumb-preview" style="display:none" alt="preview" />
+        <button type="button" class="thumb-remove" onclick="removeThumb(event)">✕</button>
+      </div>
+    </div>
+
+    <!-- Section 3: Trạng thái -->
+    <div class="form-section animate-up delay-3">
+      <div class="form-section-title">🔐 Trạng thái khóa học</div>
+      <div class="status-grid">
+        <div class="status-option">
+          <input type="radio" name="status" id="s-public" value="public" checked />
+          <label for="s-public" class="status-label">
+            <span class="status-label-icon">🌐</span>
+            <span class="status-label-name">Công khai</span>
+            <span class="status-label-desc">Ai cũng đăng ký được</span>
+          </label>
+        </div>
+        <div class="status-option">
+          <input type="radio" name="status" id="s-private" value="private" />
+          <label for="s-private" class="status-label">
+            <span class="status-label-icon">🔒</span>
+            <span class="status-label-name">Riêng tư</span>
+            <span class="status-label-desc">Cần được duyệt</span>
+          </label>
+        </div>
+        <div class="status-option">
+          <input type="radio" name="status" id="s-pending" value="pending" />
+          <label for="s-pending" class="status-label">
+            <span class="status-label-name">Nháp</span>
+            <span class="status-label-desc">Ẩn, chưa hiển thị</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Mã tham gia — chỉ hiện khi edit -->
+    <div class="join-code-card" id="jc-card">
+      <div class="jc-header">
+        <div class="jc-title">Mã tham gia khóa học</div>
+        <div class="jc-badge">Chỉ giáo viên thấy</div>
+      </div>
+      <div class="jc-code-row">
+        <div class="jc-code" id="jc-code-display">········</div>
+      </div>
+      <div class="jc-actions">
+        <button class="jc-action-btn" onclick="openQRPopup()">
+          <span class="jc-action-label">Xem QR</span>
+        </button>
+        <button class="jc-action-btn" onclick="copyJoinCode()">
+          <span class="jc-action-label" id="copy-label">Copy mã</span>
+        </button>
+        <a class="jc-action-btn" id="share-btn" href="#" onclick="copyJoinLink(event)">
+          <span class="jc-action-label">Copy link</span>
+        </a>
+      </div>
+      <button class="jc-regen" onclick="regenCode()">
+        Tạo mã mới (vô hiệu mã cũ)
+      </button>
+    </div>
+
+    <!-- Actions -->
+    <div class="form-actions animate-up delay-3">
+      <a href="/courses/" class="btn btn-ghost">Hủy</a>
+      <button class="btn btn-primary" id="btn-submit" onclick="handleSubmit()" style="min-width:140px">
+        <span class="btn-text" id="submit-text">Tạo khóa học</span>
+        <div class="spinner"></div>
+      </button>
+    </div>
+
+    <!-- Danger zone — chỉ hiện khi edit -->
+    <div class="danger-zone animate-up" id="danger-zone" style="display:none">
+      <div class="danger-title">Vùng nguy hiểm</div>
+      <p class="danger-desc">Xóa khóa học sẽ xóa toàn bộ bài học và dữ liệu liên quan. Hành động này không thể hoàn tác.</p>
+      <button class="btn btn-danger" onclick="deleteCourse()">Xóa khóa học</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- QR Popup -->
+<div class="qr-popup-overlay" id="qr-popup-overlay" onclick="handleOverlayClick(event)">
+  <div class="qr-popup">
+    <button class="qr-popup-close" onclick="closeQRPopup()">✕</button>
+    <div class="qr-popup-title">Mã QR khóa học</div>
+    <p class="qr-popup-sub" id="qr-popup-course-name">Học sinh quét mã này để tham gia ngay</p>
+    <div class="qr-frame">
+      <div class="qr-loading" id="qr-loading">
+        <div class="qr-loading-spin"></div>
+      </div>
+      <img id="qr-img" style="display:none;width:220px;height:220px;border-radius:4px;" alt="QR" />
+    </div>
+    <div class="qr-code-label" id="qr-popup-code"></div>
+    <div class="qr-join-url"   id="qr-popup-url"></div>
+    <div class="qr-popup-btns">
+      <button class="btn btn-outline" style="flex:1;font-size:13px" onclick="downloadQRPopup()">Tải QR</button>
+      <button class="btn btn-primary" style="flex:1;font-size:13px" onclick="shareQR()">
+        <span id="share-qr-text">Chia sẻ</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  const COURSES_API = 'http://localhost:8000/courses/api';
+
+  // Detect edit mode từ URL: /courses/<id>/edit/
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const isEdit    = pathParts.includes('edit');
+  const courseId  = isEdit ? pathParts[1] : null;
+
+  buildNavbar('courses');
+
+  // Chỉ teacher/admin mới vào được
+  const currentUser = Auth.getUser();
+  if (!Auth.isLoggedIn() || (currentUser?.role !== 'teacher' && currentUser?.role !== 'admin')) {
+    window.location.href = '/courses/';
+  }
+
+  // ── Edit mode setup ───────────────────────────────────────
+  if (isEdit && courseId) {
+    document.getElementById('page-title').textContent        = 'Chỉnh sửa khóa học';
+    document.getElementById('page-sub').textContent          = 'Cập nhật thông tin khóa học của bạn.';
+    document.getElementById('breadcrumb-action').textContent = 'Chỉnh sửa';
+    document.getElementById('submit-text').textContent       = 'Lưu thay đổi';
+    document.getElementById('danger-zone').style.display     = 'block';
+    loadCourseData(); // ← load data, rồi trong đó mới gọi initJoinCodeCard
+  }
+
+  // ── Load dữ liệu khi edit ─────────────────────────────────
+  async function loadCourseData() {
+    try {
+      const res  = await fetch(`${COURSES_API}/${courseId}/`);
+      const data = await res.json();
+      if (!res.ok) return;
+
+      // Fill form
+      document.getElementById('title').value       = data.title || '';
+      document.getElementById('description').value = data.description || '';
+      document.getElementById('subject').value     = data.subject || '';
+      document.getElementById('level').value       = data.level || 'basic';
+
+      const statusInput = document.querySelector(`input[name="status"][value="${data.status}"]`);
+      if (statusInput) statusInput.checked = true;
+
+      if (data.thumbnail_url) {
+        const area    = document.getElementById('thumb-upload-area');
+        const preview = document.getElementById('thumb-preview');
+        const ph      = document.getElementById('thumb-placeholder');
+        preview.src           = data.thumbnail_url;
+        preview.style.display = 'block';
+        ph.style.display      = 'none';
+        area.classList.add('has-img');
+      }
+
+      // ← Gọi sau khi đã có data đầy đủ
+      initJoinCodeCard(data);
+
+    } catch (err) {
+      console.error('loadCourseData error:', err);
+    }
+  }
+
+  // ── Join code card ────────────────────────────────────────
+  let jcCode   = '';
+  let jcUrl    = '';
+  let jcQrB64  = '';
+  let jcLoaded = false;
+
+  function initJoinCodeCard(courseData) {
+    if (!isEdit) return;
+
+    jcCode = courseData.join_code || '';
+    jcUrl  = `${window.location.origin}/courses/join/?code=${jcCode}`;
+
+    document.getElementById('jc-card').classList.add('show');
+    document.getElementById('jc-code-display').textContent      = jcCode;
+    document.getElementById('qr-popup-code').textContent        = jcCode;
+    document.getElementById('qr-popup-url').textContent         = jcUrl;
+    document.getElementById('qr-popup-course-name').textContent = courseData.title || 'khóa học';
+  }
+
+  function copyJoinCode() {
+    navigator.clipboard.writeText(jcCode).then(() => {
+      document.getElementById('copy-icon').textContent  = '✔ ';
+      document.getElementById('copy-label').textContent = 'Đã copy!';
+      setTimeout(() => {
+        document.getElementById('copy-icon').textContent  = '📋';
+        document.getElementById('copy-label').textContent = 'Copy mã';
+      }, 2000);
+    });
+  }
+
+  function copyJoinLink(e) {
+    if (e) e.preventDefault();
+    navigator.clipboard.writeText(jcUrl).then(() => {
+      const btn = document.getElementById('share-btn');
+      btn.querySelector('.jc-action-icon').textContent  = '✔ ';
+      btn.querySelector('.jc-action-label').textContent = 'Đã copy!';
+      setTimeout(() => {
+        btn.querySelector('.jc-action-icon').textContent  = '🔗';
+        btn.querySelector('.jc-action-label').textContent = 'Copy link';
+      }, 2000);
+    });
+  }
+
+  async function openQRPopup() {
+    document.getElementById('qr-popup-overlay').classList.add('show');
+    if (!jcLoaded) await fetchQR();
+  }
+
+  async function fetchQR() {
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/qr/`);
+      if (!res) return;
+      const data = await res.json();
+      jcQrB64    = data.qr_base64;
+      jcLoaded   = true;
+
+      const img     = document.getElementById('qr-img');
+      const loading = document.getElementById('qr-loading');
+      img.src               = jcQrB64;
+      img.style.display     = 'block';
+      loading.style.display = 'none';
+    } catch {
+      document.getElementById('qr-loading').innerHTML =
+        '<div style="font-size:13px;color:var(--muted);padding:16px">Lỗi tải QR</div>';
+    }
+  }
+
+  function closeQRPopup() {
+    document.getElementById('qr-popup-overlay').classList.remove('show');
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('qr-popup-overlay')) closeQRPopup();
+  }
+
+  function downloadQRPopup() {
+    if (!jcQrB64) return;
+    const a    = document.createElement('a');
+    a.href     = jcQrB64;
+    a.download = `smartlearn-qr-${jcCode}.png`;
+    a.click();
+  }
+
+  async function shareQR() {
+    const shareText = document.getElementById('share-qr-text');
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Tham gia khóa học SmartLearn', url: jcUrl });
+        shareText.textContent = 'Đã chia sẻ!';
+        setTimeout(() => { shareText.textContent = 'Chia sẻ'; }, 2000);
+      } catch {}
+    } else {
+      navigator.clipboard.writeText(jcUrl).then(() => {
+        shareText.textContent = 'Đã copy link!';
+        setTimeout(() => { shareText.textContent = 'Chia sẻ'; }, 2000);
+      });
+    }
+  }
+
+  async function regenCode() {
+    if (!confirm('Tạo mã mới sẽ vô hiệu mã cũ hoàn toàn.\nHọc sinh có mã cũ sẽ không thể dùng nữa.\nBạn có chắc muốn tiếp tục?')) return;
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/regenerate-code/`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) return;
+
+      jcCode   = data.join_code;
+      jcUrl    = `${window.location.origin}/courses/join/?code=${jcCode}`;
+      jcLoaded = false;
+
+      // Flash animation
+      const display = document.getElementById('jc-code-display');
+      display.style.color = 'var(--accent2)';
+      display.textContent = jcCode;
+      setTimeout(() => { display.style.color = 'var(--accent)'; }, 600);
+
+      document.getElementById('qr-popup-code').textContent = jcCode;
+      document.getElementById('qr-popup-url').textContent  = jcUrl;
+
+      // Reset QR image
+      document.getElementById('qr-img').style.display     = 'none';
+      document.getElementById('qr-loading').style.display = 'flex';
+      document.getElementById('qr-loading').innerHTML     = '<div class="qr-loading-spin"></div>';
+    } catch {}
+  }
+
+  // ── Thumbnail preview ─────────────────────────────────────
+  function previewThumb(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const preview = document.getElementById('thumb-preview');
+      const ph      = document.getElementById('thumb-placeholder');
+      const area    = document.getElementById('thumb-upload-area');
+      preview.src           = e.target.result;
+      preview.style.display = 'block';
+      ph.style.display      = 'none';
+      area.classList.add('has-img');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeThumb(e) {
+    e.stopPropagation();
+    document.getElementById('thumbnail').value              = '';
+    document.getElementById('thumb-preview').style.display = 'none';
+    document.getElementById('thumb-placeholder').style.display = 'block';
+    document.getElementById('thumb-upload-area').classList.remove('has-img');
+  }
+
+  // ── Submit ────────────────────────────────────────────────
+  async function handleSubmit() {
+    const title = document.getElementById('title').value.trim();
+    hideAlert('form-alert');
+    setFieldError('title', 'title-err', !title, 'Vui lòng nhập tên khóa học.');
+    if (!title) return;
+
+    const formData = new FormData();
+    formData.append('title',       title);
+    formData.append('description', document.getElementById('description').value.trim());
+    formData.append('subject', document.getElementById('subject').value.trim());
+    formData.append('level', document.getElementById('level').value);
+    formData.append('status', document.querySelector('input[name="status"]:checked').value);
+
+    const thumbFile = document.getElementById('thumbnail').files[0];
+    if (thumbFile) formData.append('thumbnail', thumbFile);
+
+    setLoading('btn-submit', true);
+    try {
+      const url    = isEdit ? `${COURSES_API}/${courseId}/` : `${COURSES_API}/`;
+      const method = isEdit ? 'PATCH' : 'POST';
+      const res    = await Auth.fetchWithAuth(url, { method, body: formData });
+      const data   = await res.json();
+
+      if (res.ok) {
+        showAlert('form-alert',
+          isEdit ? 'Cập nhật thành công!' : 'Tạo khóa học thành công!',
+          'success'
+        );
+        const id = data.course?.id || courseId;
+        setTimeout(() => window.location.href = `/courses/${id}/`, 1200);
+      } else {
+        const msg = Object.values(data).flat().join(' ') || 'Có lỗi xảy ra.';
+        showAlert('form-alert', `${msg}`, 'error');
+      }
+    } catch {
+      showAlert('form-alert', 'Lỗi kết nối.', 'error');
+    } finally {
+      setLoading('btn-submit', false);
+    }
+  }
+
+  // ── Delete ────────────────────────────────────────────────
+  async function deleteCourse() {
+    if (!confirm('Bạn chắc chắn muốn xóa khóa học này? Hành động không thể hoàn tác!')) return;
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        window.location.href = '/courses/my/';
+      } else {
+        showAlert('form-alert', `${data.error}`, 'error');
+      }
+    } catch {
+      showAlert('form-alert', 'Lỗi kết nối.', 'error');
+    }
+  }
+
+  // Close QR popup on Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeQRPopup();
+  });
+</script>
+</body>
+</html>
