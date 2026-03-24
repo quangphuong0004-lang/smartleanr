@@ -7,6 +7,7 @@
   <title>Tạo khóa học — SmartLearn</title>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     .create-page { min-height: 100vh; padding-top: 88px; padding-bottom: 60px; }
     .create-wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
@@ -272,7 +273,7 @@
 
     <!-- Section 3: Trạng thái -->
     <div class="form-section animate-up delay-3">
-      <div class="form-section-title">🔐 Trạng thái khóa học</div>
+      <div class="form-section-title">Trạng thái khóa học</div>
       <div class="status-grid">
         <div class="status-option">
           <input type="radio" name="status" id="s-public" value="public" checked />
@@ -285,7 +286,9 @@
         <div class="status-option">
           <input type="radio" name="status" id="s-private" value="private" />
           <label for="s-private" class="status-label">
-            <span class="status-label-icon">🔒</span>
+            <span class="status-label-icon">
+                <i class="fa-solid fa-lock"></i>
+            </span>
             <span class="status-label-name">Riêng tư</span>
             <span class="status-label-desc">Cần được duyệt</span>
           </label>

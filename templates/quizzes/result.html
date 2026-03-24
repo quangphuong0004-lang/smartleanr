@@ -1,0 +1,330 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kết quả Quiz — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .result-page { padding-top: 88px; padding-bottom: 60px; }
+    .result-wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+
+    .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin-bottom: 28px; flex-wrap: wrap; }
+    .breadcrumb a { color: var(--text2); transition: color 0.2s; }
+    .breadcrumb a:hover { color: var(--accent); }
+    .breadcrumb-sep { opacity: 0.4; }
+
+    /* Hero kết quả */
+    .result-hero {
+      border-radius: var(--radius-lg); padding: 40px 36px;
+      margin-bottom: 28px; text-align: center; position: relative; overflow: hidden;
+    }
+    .result-hero.passed {
+      background: linear-gradient(135deg, rgba(74,222,128,0.1), rgba(34,211,238,0.07));
+      border: 1px solid rgba(74,222,128,0.25);
+    }
+    .result-hero.failed {
+      background: linear-gradient(135deg, rgba(248,113,113,0.08), rgba(251,146,60,0.05));
+      border: 1px solid rgba(248,113,113,0.2);
+    }
+
+    .result-emoji { font-size: 64px; margin-bottom: 16px; animation: popIn 0.6s cubic-bezier(0.34,1.56,0.64,1); display: block; }
+    @keyframes popIn { from{transform:scale(0) rotate(-20deg);opacity:0} to{transform:scale(1) rotate(0);opacity:1} }
+
+    .result-title { font-family: var(--font-display); font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .result-subtitle { color: var(--text2); font-size: 15px; margin-bottom: 28px; }
+
+    /* Score circle */
+    .score-circle-wrap { display: flex; justify-content: center; margin-bottom: 28px; }
+    .score-circle {
+      position: relative; width: 140px; height: 140px;
+    }
+    .score-circle svg { transform: rotate(-90deg); }
+    .score-circle-track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 10; }
+    .score-circle-fill  {
+      fill: none; stroke-width: 10; stroke-linecap: round;
+      stroke-dasharray: 339.3; stroke-dashoffset: 339.3;
+      transition: stroke-dashoffset 1.5s cubic-bezier(0.4,0,0.2,1);
+    }
+    .score-circle-fill.passed { stroke: url(#scoreGrad); }
+    .score-circle-fill.failed { stroke: var(--danger); }
+    .score-circle-text {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .score-number { font-family: var(--font-display); font-size: 34px; font-weight: 900; line-height: 1; }
+    .score-number.passed { color: var(--accent); }
+    .score-number.failed { color: var(--danger); }
+    .score-unit  { font-size: 13px; color: var(--muted); }
+
+    /* Stats row */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+    .stat-card {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; text-align: center;
+    }
+    .stat-val   { font-family: var(--font-display); font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .stat-label { font-size: 12px; color: var(--muted); }
+
+    /* Review section */
+    .review-section { margin-bottom: 32px; }
+    .review-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+    .review-question {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .review-question.correct { border-color: rgba(74,222,128,0.25); }
+    .review-question.wrong   { border-color: rgba(248,113,113,0.25); }
+    .review-question.skipped { border-color: rgba(251,146,60,0.25); }
+
+    .rq-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .rq-num {
+      width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+    }
+    .rq-num.correct { background: rgba(74,222,128,0.15); color: var(--accent); }
+    .rq-num.wrong   { background: rgba(248,113,113,0.15); color: var(--danger); }
+    .rq-num.skipped { background: rgba(251,146,60,0.15); color: var(--accent3); }
+
+    .rq-text   { font-size: 15px; font-weight: 600; flex: 1; line-height: 1.4; }
+    .rq-status { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; flex-shrink: 0; }
+    .rq-status.correct { background: rgba(74,222,128,0.1); color: var(--accent); }
+    .rq-status.wrong   { background: rgba(248,113,113,0.1); color: var(--danger); }
+    .rq-status.skipped { background: rgba(251,146,60,0.1);  color: var(--accent3); }
+
+    .rq-choices { display: flex; flex-direction: column; gap: 6px; }
+    .rq-choice {
+      display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+      border-radius: var(--radius); font-size: 14px; border: 1px solid transparent;
+    }
+    .rq-choice.correct-answer { background: rgba(74,222,128,0.07); border-color: rgba(74,222,128,0.25); color: var(--accent); }
+    .rq-choice.my-wrong       { background: rgba(248,113,113,0.07); border-color: rgba(248,113,113,0.25); color: var(--danger); }
+    .rq-choice-icon { font-size: 14px; flex-shrink: 0; }
+    .rq-choice-letter {
+      width: 22px; height: 22px; border-radius: 5px; flex-shrink: 0;
+      background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+    }
+
+    .actions-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    .nav-logo-img { height: 60px; width: auto; object-fit: contain; }
+    .nav-logo { display: flex; align-items: center; }
+    .nav-logo-text { margin-left: -20px; }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-green"></div>
+  <div class="orb orb-cyan"></div>
+</div>
+
+<nav class="navbar z1">
+  <a href="/" class="nav-logo">
+    <img src="{% static 'images/smart_learn_logo.png' %}" alt="SmartLearn" class="nav-logo-img">
+    <span class="nav-logo-text">SmartLearn</span>
+  </a>
+  <div class="nav-links" id="navbar-links"></div>
+</nav>
+
+<div class="result-page z1">
+  <div class="result-wrap">
+
+    <div class="breadcrumb animate-up">
+      <a href="/courses/">Khóa học</a>
+      <span class="breadcrumb-sep">›</span>
+      <a href="#" id="bc-course">Khóa học</a>
+      <span class="breadcrumb-sep">›</span>
+      <a href="#" id="bc-quizzes">Quiz</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>Kết quả</span>
+    </div>
+
+    <div id="result-content">
+      <div style="padding:60px;text-align:center;color:var(--muted)">Đang tải kết quả...</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SVG gradient defs -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  const QUIZ_API = 'http://localhost:8000/api/courses';
+  const parts    = window.location.pathname.split('/').filter(Boolean);
+  const courseId = parts[1];
+  const quizId   = parts[3];
+  const attemptId= parts[5];
+
+  buildNavbar('courses');
+  Auth.requireAuth();
+
+  const LETTERS = ['A','B','C','D','E','F'];
+
+  async function loadResult() {
+    try {
+      // Load course name
+      fetch(`http://localhost:8000/courses/api/${courseId}/`).then(r=>r.json()).then(d => {
+        document.getElementById('bc-course').textContent = d.title;
+        document.getElementById('bc-course').href        = `/courses/${courseId}/`;
+        document.getElementById('bc-quizzes').href       = `/courses/${courseId}/quizzes/`;
+      });
+
+      const res  = await Auth.fetchWithAuth(
+        `${QUIZ_API}/${courseId}/quizzes/${quizId}/attempts/${attemptId}/result/`
+      );
+      if (!res) return;
+      const data = await res.json();
+      renderResult(data);
+    } catch (err) {
+      document.getElementById('result-content').innerHTML =
+        `<div style="padding:60px;text-align:center;color:var(--muted)">Lỗi tải kết quả: ${err.message}</div>`;
+    }
+  }
+
+  function renderResult(data) {
+    const passed   = data.is_passed;
+    const score    = data.score ?? 0;
+    const duration = data.duration_seconds
+      ? `${Math.floor(data.duration_seconds/60)}p ${data.duration_seconds%60}s`
+      : '—';
+
+    const correct = data.questions?.filter(q => {
+      const myChoice = q.choices.find(c => c.id === q.my_choice);
+      return myChoice?.is_correct;
+    }).length ?? 0;
+    const total   = data.questions?.length ?? 0;
+
+    // Circumference = 2π×54 ≈ 339.3
+    const offset = 339.3 * (1 - score / 100);
+
+    document.getElementById('result-content').innerHTML = `
+      <!-- Hero -->
+      <div class="result-hero ${passed?'passed':'failed'} animate-up">
+        <span class="result-emoji">
+            <i class="fa-solid ${passed ? 'fa-circle-check' : 'fa-face-smile'}"></i>
+        </span>
+        <div class="result-title">${passed ? 'Chúc mừng! Bạn đã vượt qua!' : 'Chưa đạt — Cố lên!'}</div>
+        <div class="result-subtitle">${passed ? 'Bạn đã hoàn thành bài kiểm tra xuất sắc.' : 'Hãy ôn lại và thử lại lần sau nhé!'}</div>
+
+        <div class="score-circle-wrap">
+          <div class="score-circle">
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle class="score-circle-track" cx="70" cy="70" r="54"/>
+              <circle class="score-circle-fill ${passed?'passed':'failed'}" id="score-fill"
+                      cx="70" cy="70" r="54"/>
+            </svg>
+            <div class="score-circle-text">
+              <div class="score-number ${passed?'passed':'failed'}">${score}%</div>
+              <div class="score-unit">điểm số</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-val" style="color:var(--accent)">${correct}/${total}</div>
+            <div class="stat-label">Câu đúng</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" style="color:var(--text2)">${duration}</div>
+            <div class="stat-label">Thời gian</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val" style="color:${passed?'var(--accent)':'var(--danger)'}">${passed?'ĐẠT':'CHƯA ĐẠT'}</div>
+            <div class="stat-label">Kết quả</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Review -->
+      <div class="review-section animate-up delay-1">
+        <div class="review-title">Xem lại đáp án</div>
+        ${(data.questions || []).map((q, i) => renderReviewQuestion(q, i)).join('')}
+      </div>
+
+      <!-- Actions -->
+      <div class="actions-row animate-up delay-2">
+        <a href="/courses/${courseId}/quizzes/" class="btn btn-outline">← Quay lại danh sách quiz</a>
+        <a href="/courses/${courseId}/" class="btn btn-primary">Về trang khóa học</a>
+      </div>
+    `;
+
+    // Animate score circle
+    setTimeout(() => {
+      const fillEl = document.getElementById('score-fill');
+      if (fillEl) fillEl.style.strokeDashoffset = offset;
+    }, 300);
+
+    // Confetti nếu đạt
+    if (passed) setTimeout(launchConfetti, 400);
+  }
+
+  function renderReviewQuestion(q, index) {
+    const myChoice      = q.choices.find(c => c.id === q.my_choice);
+    const correctChoice = q.choices.find(c => c.is_correct);
+    const isCorrect     = myChoice?.is_correct === true;
+    const isSkipped     = !q.my_choice;
+    const statusCls     = isSkipped ? 'skipped' : isCorrect ? 'correct' : 'wrong';
+    const statusLabel   = isSkipped ? '⏭ Bỏ qua' : isCorrect ? '✓ Đúng' : '✗ Sai';
+
+    const choicesHtml = q.choices.map((c, ci) => {
+      const isCorrectAns = c.is_correct;
+      const isMyChoice   = c.id === q.my_choice;
+      const isMyWrong    = isMyChoice && !isCorrectAns;
+      const cls = isCorrectAns ? 'correct-answer' : isMyWrong ? 'my-wrong' : '';
+      const icon = isCorrectAns ? '✓' : isMyWrong ? '✗' : '';
+      return `
+        <div class="rq-choice ${cls}">
+          <div class="rq-choice-letter">${LETTERS[ci]}</div>
+          <div style="flex:1;font-size:14px">${c.text}</div>
+          ${icon ? `<span class="rq-choice-icon">${icon}</span>` : ''}
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="review-question ${statusCls} animate-up">
+        <div class="rq-header">
+          <div class="rq-num ${statusCls}">${index+1}</div>
+          <div class="rq-text">${q.text}</div>
+          <div class="rq-status ${statusCls}">${statusLabel}</div>
+        </div>
+        <div class="rq-choices">${choicesHtml}</div>
+      </div>`;
+  }
+
+  function launchConfetti() {
+    const colors = ['#4ade80','#22d3ee','#f59e0b','#a78bfa'];
+    const wrap   = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden';
+    document.body.appendChild(wrap);
+    const style = document.createElement('style');
+    style.textContent = '@keyframes cf2{to{transform:translateY(110vh) rotate(720deg);opacity:0}}';
+    document.head.appendChild(style);
+    for (let i=0;i<60;i++) {
+      const el=document.createElement('div'); const s=5+Math.random()*8;
+      el.style.cssText=`position:absolute;left:${Math.random()*100}%;top:-10px;width:${s}px;height:${s}px;background:${colors[~~(Math.random()*colors.length)]};border-radius:${Math.random()>.5?'50%':'2px'};animation:cf2 ${2+Math.random()*2}s ${Math.random()*.8}s linear forwards;`;
+      wrap.appendChild(el);
+    }
+    setTimeout(()=>wrap.remove(),4000);
+  }
+
+  loadResult();
+</script>
+</body>
+</html>

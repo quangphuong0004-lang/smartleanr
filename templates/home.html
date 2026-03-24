@@ -328,13 +328,6 @@
           <div class="feature-title">Chat hỏi bài trực tiếp</div>
           <div class="feature-desc">Phòng chat riêng cho mỗi khóa học. Học sinh và giáo viên trao đổi trực tiếp, tin nhắn hiển thị ngay lập tức.</div>
         </div>
-        <div class="feature-card amber animate-up delay-2">
-          <div class="feature-icon amber">
-              <i class="fa-solid fa-bolt"></i>
-          </div>
-          <div class="feature-title">Live Quiz thi đua</div>
-          <div class="feature-desc">Thi cùng bạn bè theo thời gian thực. Bảng xếp hạng cập nhật live, tạo hứng khởi học tập.</div>
-        </div>
         <div class="feature-card cyan animate-up delay-1">
           <div class="feature-icon cyan">
               <i class="fa-solid fa-chart-line"></i>
@@ -486,7 +479,7 @@
     const hour = new Date().getHours();
     const greet = hour < 12 ? 'buổi sáng' : hour < 18 ? 'buổi chiều' : 'buổi tối';
     document.querySelector('.dash-greeting').innerHTML =
-      `Chào ${greet}, <span id="dash-name" style="background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">${name}</span> 👋`;
+      `Chào ${greet}, <span id="dash-name" style="background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">${name}</span>`;
     if (user?.role === 'teacher') {
       document.getElementById('dash-role-label').textContent = 'Quản lý lớp học và theo dõi học sinh của bạn';
     }

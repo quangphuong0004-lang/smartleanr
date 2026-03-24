@@ -1,0 +1,554 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chi tiết Quiz — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <style>
+    .breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--muted); margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .breadcrumb a { color: var(--text2); transition: color 0.2s; }
+    .breadcrumb a:hover { color: var(--accent); }
+    .breadcrumb-sep { opacity: 0.4; }
+
+    /* ── Layout ── */
+    .detail-layout { display: grid; grid-template-columns: 1fr 300px; gap: 32px; }
+    @media (max-width: 860px) { .detail-layout { grid-template-columns: 1fr; } }
+
+    /* ── Quiz hero ── */
+    .quiz-hero {
+      background: linear-gradient(135deg, rgba(74,222,128,0.06), rgba(34,211,238,0.04));
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 36px; margin-bottom: 28px; position: relative; overflow: hidden;
+    }
+    .quiz-hero::before {
+      content: ''; position: absolute; top: -60px; right: -60px;
+      width: 240px; height: 240px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(74,222,128,0.08), transparent 70%);
+      pointer-events: none;
+    }
+    .quiz-subject-label {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 1.5px; color: var(--accent); margin-bottom: 10px;
+    }
+    .quiz-hero-title {
+      font-family: var(--font-display); font-size: 26px; font-weight: 800;
+      margin-bottom: 10px; letter-spacing: -0.3px; line-height: 1.3;
+    }
+    .quiz-hero-desc { color: var(--text2); font-size: 14px; line-height: 1.7; margin-bottom: 20px; }
+    .quiz-hero-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    /* ── Score hero (sau khi làm bài) ── */
+    .my-score-section {
+      border-radius: var(--radius-lg); padding: 28px 32px;
+      margin-bottom: 28px; display: none;
+    }
+    .my-score-section.passed { background: linear-gradient(135deg, rgba(74,222,128,0.08), rgba(34,211,238,0.05)); border: 1px solid rgba(74,222,128,0.2); }
+    .my-score-section.failed { background: linear-gradient(135deg, rgba(248,113,113,0.07), rgba(251,146,60,0.04)); border: 1px solid rgba(248,113,113,0.18); }
+
+    .score-layout { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+    .score-circle-mini {
+      width: 100px; height: 100px; position: relative; flex-shrink: 0;
+    }
+    .score-circle-mini svg { transform: rotate(-90deg); }
+    .scm-track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 8; }
+    .scm-fill  {
+      fill: none; stroke-width: 8; stroke-linecap: round;
+      stroke-dasharray: 245; stroke-dashoffset: 245;
+      transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    .scm-fill.passed { stroke: url(#grad1); }
+    .scm-fill.failed { stroke: var(--danger); }
+    .score-circle-mini-text {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .scm-number { font-family: var(--font-display); font-size: 22px; font-weight: 900; line-height: 1; }
+    .scm-number.passed { color: var(--accent); }
+    .scm-number.failed { color: var(--danger); }
+    .scm-unit { font-size: 11px; color: var(--muted); }
+
+    .score-info { flex: 1; }
+    .score-info-title { font-family: var(--font-display); font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+    .score-info-desc  { font-size: 14px; color: var(--text2); margin-bottom: 14px; }
+    .score-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+    .score-stat { font-size: 13px; color: var(--text2); }
+    .score-stat strong { color: var(--text); }
+
+    /* ── Preview section (câu hỏi preview — không có đáp án) ── */
+    .section-title {
+      font-family: var(--font-display); font-size: 17px; font-weight: 700;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+
+    .question-preview {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 20px; margin-bottom: 10px;
+      display: flex; align-items: flex-start; gap: 12px;
+      transition: border-color 0.2s;
+    }
+    .question-preview:hover { border-color: var(--border2); }
+    .qp-num {
+      width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
+      background: rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--text2);
+    }
+    .qp-text  { font-size: 14px; line-height: 1.5; flex: 1; }
+    .qp-meta  { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .qp-points { font-size: 12px; color: var(--accent); font-weight: 600; flex-shrink: 0; }
+
+    /* ── Action card ── */
+    .action-card {
+      position: sticky; top: 88px;
+      background: var(--panel); border: 1px solid var(--border2);
+      border-radius: var(--radius-lg); padding: 28px;
+    }
+    .action-card-title {
+      font-family: var(--font-display); font-size: 16px; font-weight: 700;
+      margin-bottom: 20px;
+    }
+    .action-info { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+    .action-info-item { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text2); }
+    .action-info-icon { font-size: 16px; width: 20px; text-align: center; }
+    .btn-action-wrap { display: flex; flex-direction: column; gap: 10px; }
+
+    /* ── Leaderboard (teacher) ── */
+    .leaderboard { margin-top: 24px; }
+    .lb-header {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; color: var(--muted); padding: 0 4px; margin-bottom: 8px;
+    }
+    .lb-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      margin-bottom: 6px; transition: border-color 0.2s;
+    }
+    .lb-item:hover { border-color: var(--border2); }
+    .lb-rank {
+      width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; background: rgba(255,255,255,0.06); color: var(--muted);
+    }
+    .lb-rank.gold   { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .lb-rank.silver { background: rgba(156,163,175,0.15); color: #9ca3af; }
+    .lb-rank.bronze { background: rgba(180,83,9,0.15);   color: #b45309; }
+    .lb-name   { flex: 1; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-score  { font-size: 13px; font-weight: 700; }
+    .lb-score.passed { color: var(--accent); }
+    .lb-score.failed { color: var(--danger); }
+
+    /* unpublished banner */
+    .unpublished-banner {
+      background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.25);
+      border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px;
+      font-size: 13px; color: var(--accent3); display: flex; align-items: center; gap: 8px;
+    }
+
+    .nav-logo-img { height: 60px; width: auto; object-fit: contain; }
+    .nav-logo { display: flex; align-items: center; }
+    .nav-logo-text { margin-left: -20px; }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-green"></div>
+  <div class="orb orb-cyan"></div>
+</div>
+
+<!-- SVG gradient -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<nav class="navbar z1">
+  <a href="/" class="nav-logo">
+    <img src="{% static 'images/smart_learn_logo.png' %}" alt="SmartLearn" class="nav-logo-img">
+    <span class="nav-logo-text">SmartLearn</span>
+  </a>
+  <div class="nav-links" id="navbar-links"></div>
+</nav>
+
+<div class="page z1">
+  <div class="page-inner-wide">
+
+    <div class="breadcrumb animate-up">
+      <a href="/courses/">Khóa học</a>
+      <span class="breadcrumb-sep">›</span>
+      <a href="#" id="bc-course">Khóa học</a>
+      <span class="breadcrumb-sep">›</span>
+      <a href="#" id="bc-quizzes">Quiz</a>
+      <span class="breadcrumb-sep">›</span>
+      <span id="bc-quiz-title">Đang tải...</span>
+    </div>
+
+    <div class="detail-layout">
+
+      <!-- ── Left ── -->
+      <div>
+
+        <!-- Hero -->
+        <div class="quiz-hero animate-up">
+          <div class="quiz-subject-label" id="quiz-subject-label">BÀI KIỂM TRA</div>
+          <h1 class="quiz-hero-title" id="quiz-title">Đang tải...</h1>
+          <p class="quiz-hero-desc"   id="quiz-desc"></p>
+          <div class="quiz-hero-meta" id="quiz-meta"></div>
+        </div>
+
+        <!-- Score (hiện khi đã làm) -->
+        <div class="my-score-section" id="my-score-section">
+          <div class="score-layout">
+            <div class="score-circle-mini">
+              <svg width="100" height="100" viewBox="0 0 100 100">
+                <circle class="scm-track" cx="50" cy="50" r="39"/>
+                <circle class="scm-fill" id="scm-fill" cx="50" cy="50" r="39"/>
+              </svg>
+              <div class="score-circle-mini-text">
+                <div class="scm-number" id="scm-number">0%</div>
+                <div class="scm-unit">điểm</div>
+              </div>
+            </div>
+            <div class="score-info">
+              <div class="score-info-title" id="score-title">Kết quả của bạn</div>
+              <div class="score-info-desc"  id="score-desc"></div>
+              <div class="score-stats"      id="score-stats"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Danh sách câu hỏi preview -->
+        <div class="animate-up delay-1">
+          <div class="section-title">
+            Nội dung bài kiểm tra
+            <span class="badge badge-muted" id="q-count-badge">0 câu</span>
+          </div>
+          <div id="questions-preview">
+            <div style="padding:24px;text-align:center;color:var(--muted)">Đang tải...</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Right: Action card ── -->
+      <div>
+        <div class="action-card animate-up delay-1">
+          <div class="action-card-title">Thông tin</div>
+
+          <div class="action-info" id="action-info">
+            <div class="action-info-item">Đang tải...</div>
+          </div>
+
+          <div class="alert" id="action-alert"></div>
+
+          <div class="btn-action-wrap" id="action-buttons">
+            <div style="text-align:center;color:var(--muted);font-size:13px">Đang tải...</div>
+          </div>
+
+          <!-- Leaderboard (teacher only) -->
+          <div class="leaderboard" id="leaderboard-section" style="display:none">
+            <div class="section-title" style="font-size:14px;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+              🏆 Bảng xếp hạng
+            </div>
+            <div class="lb-header">
+              <span>Học sinh</span><span>Điểm</span>
+            </div>
+            <div id="leaderboard-list">
+              <div style="text-align:center;color:var(--muted);font-size:13px;padding:12px">Đang tải...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  const QUIZ_API  = 'http://localhost:8000/api/courses';
+  const COURSE_API = 'http://localhost:8000/courses/api';
+  const parts     = window.location.pathname.split('/').filter(Boolean);
+  const courseId  = parts[1];
+  const quizId    = parts[3];
+
+  let quizData  = null;
+  let isOwner   = false;
+  const user    = Auth.getUser();
+
+  buildNavbar('courses');
+
+  // ── Init ──────────────────────────────────────────────────
+  async function init() {
+    // Load course name cho breadcrumb
+    try {
+      const res  = await (Auth.isLoggedIn()
+        ? Auth.fetchWithAuth(`${COURSE_API}/${courseId}/`)
+        : fetch(`${COURSE_API}/${courseId}/`));
+      const data = await res.json();
+      document.getElementById('bc-course').textContent = data.title;
+      document.getElementById('bc-course').href        = `/courses/${courseId}/`;
+      document.getElementById('bc-quizzes').href       = `/courses/${courseId}/quizzes/`;
+      isOwner = data.teacher?.id === user?.id || user?.role === 'admin';
+    } catch {}
+
+    loadQuiz();
+  }
+
+  // ── Load quiz ─────────────────────────────────────────────
+  async function loadQuiz() {
+    try {
+      const res = Auth.isLoggedIn()
+        ? await Auth.fetchWithAuth(`${QUIZ_API}/${courseId}/quizzes/${quizId}/`)
+        : await fetch(`${QUIZ_API}/${courseId}/quizzes/${quizId}/`);
+
+      if (!res) return;
+      const data = await res.json();
+      if (!res.ok) {
+        document.getElementById('quiz-title').textContent = data.error || 'Không tìm thấy quiz.';
+        return;
+      }
+
+      quizData = data;
+      renderQuiz(data);
+
+      if (isOwner) loadLeaderboard();
+    } catch {
+      document.getElementById('quiz-title').textContent = 'Lỗi kết nối.';
+    }
+  }
+
+  // ── Render quiz info ──────────────────────────────────────
+  function renderQuiz(q) {
+    document.title = `${q.title} — SmartLearn`;
+    document.getElementById('bc-quiz-title').textContent   = q.title;
+    document.getElementById('quiz-title').textContent      = q.title;
+    document.getElementById('quiz-desc').textContent       = q.description || '';
+    document.getElementById('q-count-badge').textContent   = `${q.question_count} câu`;
+
+    const timeLabel = q.time_limit
+      ? `${Math.floor(q.time_limit / 60)} phút`
+      : 'Không giới hạn';
+
+    document.getElementById('quiz-meta').innerHTML = `
+      <span class="badge badge-muted">${q.question_count} câu hỏi</span>
+      <span class="badge badge-muted">⏱ ${timeLabel}</span>
+      <span class="badge badge-muted">Đạt ${q.pass_score}%</span>
+      ${!q.is_published ? '<span class="badge badge-amber">Nháp</span>' : ''}
+    `;
+
+    document.getElementById('action-info').innerHTML = `
+      <div class="action-info-item">${q.question_count} câu hỏi</div>
+      <div class="action-info-item">${timeLabel}</div>
+      <div class="action-info-item">Điểm đạt: ${q.pass_score}%</div>
+      <div class="action-info-item">${q.is_published ? 'Đang mở' : 'Chưa công bố'}</div>
+    `;
+
+    renderActionButtons(q);
+    renderQuestionsPreview(q);
+  }
+
+  // ── Action buttons ─────────────────────────────────────────
+  function renderActionButtons(q) {
+    const wrap = document.getElementById('action-buttons');
+
+    // ── Owner/Teacher ──
+    if (isOwner) {
+      if (!q.is_published) {
+        wrap.innerHTML = `
+          <div class="unpublished-banner">Quiz chưa được công bố với học sinh</div>
+          <a href="/courses/${courseId}/quizzes/${quizId}/edit/" class="btn btn-primary btn-full">Chỉnh sửa quiz</a>
+          <button class="btn btn-outline btn-full" onclick="publishQuiz()">
+            <span class="btn-text">Công bố ngay</span>
+            <div class="spinner"></div>
+          </button>
+        `;
+      } else {
+        wrap.innerHTML = `
+          <a href="/courses/${courseId}/quizzes/${quizId}/edit/" class="btn btn-outline btn-full">Chỉnh sửa quiz</a>
+          <button class="btn btn-ghost btn-full" onclick="unpublishQuiz()" style="font-size:13px;border:1px solid var(--border)">
+            <span class="btn-text">⏸ Ẩn quiz</span>
+            <div class="spinner"></div>
+          </button>
+        `;
+      }
+      document.getElementById('leaderboard-section').style.display = 'block';
+      return;
+    }
+
+    // ── Student chưa đăng nhập ──
+    if (!Auth.isLoggedIn()) {
+      wrap.innerHTML = `<a href="/accounts/login/?next=/courses/${courseId}/quizzes/${quizId}/" class="btn btn-primary btn-full">🔑 Đăng nhập để làm bài</a>`;
+      return;
+    }
+
+    // ── Student: check đã làm chưa từ list API ──
+    checkAttemptStatus(q);
+  }
+
+  async function checkAttemptStatus(q) {
+    const wrap = document.getElementById('action-buttons');
+
+    try {
+      // Lấy danh sách quiz để kiểm tra has_attempted
+      const res  = await Auth.fetchWithAuth(`${QUIZ_API}/${courseId}/quizzes/`);
+      if (!res) return;
+      const list = await res.json();
+      const myQuiz = list.find(item => item.id === quizId);
+
+      if (myQuiz?.has_attempted) {
+        const score    = myQuiz.my_score;
+        const passed   = score >= q.pass_score;
+        const scoreEl  = document.getElementById('my-score-section');
+        const scmFill  = document.getElementById('scm-fill');
+        const scmNum   = document.getElementById('scm-number');
+
+        // Hiện score section
+        scoreEl.style.display = 'block';
+        scoreEl.className     = `my-score-section ${passed ? 'passed' : 'failed'}`;
+
+        scmNum.textContent  = `${score}%`;
+        scmNum.className    = `scm-number ${passed ? 'passed' : 'failed'}`;
+        scmFill.className   = `scm-fill ${passed ? 'passed' : 'failed'}`;
+
+        // Animate circle — circumference 2π×39 ≈ 245
+        setTimeout(() => {
+          scmFill.style.strokeDashoffset = 245 * (1 - score / 100);
+        }, 300);
+
+        document.getElementById('score-title').textContent = passed ? 'Bạn đã vượt qua!' : '😅 Chưa đạt';
+        document.getElementById('score-desc').textContent  = passed
+          ? 'Chúc mừng! Bạn đã hoàn thành bài kiểm tra.'
+          : `Bạn cần đạt ${q.pass_score}% để qua. Hãy ôn lại và thử lại!`;
+        document.getElementById('score-stats').innerHTML = `
+          <span class="score-stat">Điểm của bạn: <strong style="color:${passed?'var(--accent)':'var(--danger)'}">${score}%</strong></span>
+          <span class="score-stat">Điểm đạt: <strong>${q.pass_score}%</strong></span>
+        `;
+
+        // Tìm attempt id — cần gọi API riêng nếu có
+        wrap.innerHTML = `
+            <a href="/courses/${courseId}/quizzes/${quizId}/result/${myQuiz.my_attempt_id}/"
+            class="btn btn-primary btn-full" style="font-size:13px">
+            Xem lại đáp án
+            </a>
+            <a href="/courses/${courseId}/quizzes/"
+            class="btn btn-outline btn-full" style="font-size:13px">
+            ← Quay lại danh sách
+            </a>
+        `;
+
+      } else {
+        // Chưa làm
+        if (!q.is_published) {
+          wrap.innerHTML = `<div style="text-align:center;font-size:13px;color:var(--muted);padding:12px">Quiz chưa được mở.</div>`;
+        } else {
+          wrap.innerHTML = `
+            <a href="/courses/${courseId}/quizzes/${quizId}/take/" class="btn btn-primary btn-full" style="font-size:15px;padding:14px">
+              ▶ Bắt đầu làm bài
+            </a>
+          `;
+        }
+      }
+    } catch {
+      wrap.innerHTML = `<a href="/courses/${courseId}/quizzes/${quizId}/take/" class="btn btn-primary btn-full">▶ Bắt đầu làm bài</a>`;
+    }
+    
+  }
+
+  // ── Preview câu hỏi ───────────────────────────────────────
+  function renderQuestionsPreview(q) {
+    const container = document.getElementById('questions-preview');
+    const questions = q.questions || [];
+
+    if (!questions.length) {
+      container.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:14px">Chưa có câu hỏi nào.</div>`;
+      return;
+    }
+
+    container.innerHTML = questions.map((question, i) => `
+      <div class="question-preview animate-up">
+        <div class="qp-num">${i + 1}</div>
+        <div style="flex:1;min-width:0">
+          <div class="qp-text">${question.text}</div>
+          <div class="qp-meta">${question.choices?.length || 0} đáp án</div>
+        </div>
+        <div class="qp-points">${question.points} đ</div>
+      </div>`).join('');
+  }
+
+  // ── Leaderboard (teacher) ─────────────────────────────────
+  async function loadLeaderboard() {
+    const listEl = document.getElementById('leaderboard-list');
+    try {
+      const res  = await Auth.fetchWithAuth(`${QUIZ_API}/${courseId}/quizzes/${quizId}/attempts/`);
+      if (!res) return;
+      const data = await res.json();
+
+      const attempts = (data.attempts || [])
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+
+      if (!attempts.length) {
+        listEl.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px">Chưa có học sinh nào làm bài.</div>`;
+        return;
+      }
+
+      const rankCls = ['gold','silver','bronze'];
+      listEl.innerHTML = attempts.map((a, i) => `
+        <div class="lb-item">
+          <div class="lb-rank ${rankCls[i] || ''}">${i < 3 ? ['🥇','🥈','🥉'][i] : i+1}</div>
+          <div class="lb-name">${a.student}</div>
+          <div class="lb-score ${a.is_passed ? 'passed' : 'failed'}">${a.score}%</div>
+        </div>`).join('');
+
+      // Thêm tổng kết
+      const passedCount = attempts.filter(a => a.is_passed).length;
+      document.getElementById('leaderboard-section').insertAdjacentHTML('beforeend', `
+        <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+          ${data.total} học sinh đã làm · ${passedCount} đạt (${data.total ? Math.round(passedCount/data.total*100) : 0}%)
+        </div>`);
+
+    } catch {
+      listEl.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:13px;padding:12px">Lỗi tải bảng xếp hạng.</div>`;
+    }
+  }
+
+  // ── Publish / Unpublish ───────────────────────────────────
+  async function publishQuiz() {
+    await togglePublish(true);
+  }
+  async function unpublishQuiz() {
+    if (!confirm('Ẩn quiz sẽ ngăn học sinh làm bài. Tiếp tục?')) return;
+    await togglePublish(false);
+  }
+
+  async function togglePublish(publish) {
+    const btnId = publish ? undefined : undefined; // dùng setLoading nếu muốn
+    try {
+      const res = await Auth.fetchWithAuth(
+        `${QUIZ_API}/${courseId}/quizzes/${quizId}/`,
+        { method: 'PATCH', body: JSON.stringify({ is_published: publish }) }
+      );
+      if (res?.ok) {
+        showAlert('action-alert', publish ? 'Đã công bố quiz!' : 'Đã ẩn quiz.', 'success');
+        setTimeout(() => loadQuiz(), 900);
+      }
+    } catch {
+      showAlert('action-alert', 'Lỗi kết nối.', 'error');
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

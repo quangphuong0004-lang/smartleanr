@@ -7,6 +7,7 @@
   <title>Chi tiết khóa học — SmartLearn</title>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     /* ── Hero ── */
     .course-hero {
@@ -286,7 +287,9 @@
               <div class="hero-meta"             id="hero-meta"></div>
               <div class="teacher-mini"          id="teacher-mini"></div>
             </div>
-            <div class="hero-thumb" id="hero-thumb">📚</div>
+            <div class="hero-thumb" id="hero-thumb">
+                <i class="fa-solid fa-book"></i>
+            </div>
           </div>
         </div>
 
@@ -399,8 +402,12 @@
 
     document.getElementById('hero-meta').innerHTML = `
       <span class="badge ${LEVEL_CLASS[c.level] || 'badge-muted'}">${LEVEL_LABEL[c.level] || c.level}</span>
-      <span class="badge badge-muted">👥 ${c.student_count} học sinh</span>
-      <span class="badge badge-muted">📄 ${c.lesson_count} bài học</span>
+      <span class="badge badge-muted">
+          <i class="fa-solid fa-users"></i> ${c.student_count} học sinh
+      </span>
+      <span class="badge badge-muted">
+          <i class="fa-solid fa-book-open"></i> ${c.lesson_count} bài học
+      </span>
     `;
 
     if (c.thumbnail_url) {
@@ -419,18 +426,40 @@
     `;
 
     document.getElementById('action-info').innerHTML = `
-      <div class="action-info-item"><span class="action-info-icon">📄</span>${c.lesson_count} bài học</div>
-      <div class="action-info-item"><span class="action-info-icon">👥</span>${c.student_count} học sinh đang học</div>
-      <div class="action-info-item"><span class="action-info-icon">📊</span>${LEVEL_LABEL[c.level] || c.level}</div>
-      <div class="action-info-item"><span class="action-info-icon">${c.status === 'public' ? '🔓' : '🔒'}</span>${c.status === 'public' ? 'Đăng ký ngay' : 'Cần được duyệt'}</div>
+      <div class="action-info-item">
+    <span class="action-info-icon">
+        <i class="fa-solid fa-book-open"></i>
+    </span>
+    ${c.lesson_count} bài học
+    </div>
+
+    <div class="action-info-item">
+        <span class="action-info-icon">
+            <i class="fa-solid fa-users"></i>
+        </span>
+        ${c.student_count} học sinh đang học
+    </div>
+
+    <div class="action-info-item">
+        <span class="action-info-icon">
+            <i class="fa-solid fa-signal"></i>
+        </span>
+        ${LEVEL_LABEL[c.level] || c.level}
+    </div>
+
+    <div class="action-info-item">
+        <span class="action-info-icon">
+            <i class="fa-solid ${c.status === 'public' ? 'fa-lock-open' : 'fa-lock'}"></i>
+        </span>
+        ${c.status === 'public' ? 'Đăng ký ngay' : 'Cần được duyệt'}
+    </div>
     `;
 
     renderEnrollActions(c);
   }
 
-  // ════════════════════════════════════════
   // ENROLL ACTIONS
-  // ════════════════════════════════════════
+
   function renderEnrollActions(c) {
     const user      = Auth.getUser();
     const wrap      = document.getElementById('enroll-actions');
@@ -440,29 +469,32 @@
       wrap.innerHTML = `
         <a href="/courses/${c.id}/edit/" class="btn btn-outline btn-full">Chỉnh sửa khóa học</a>
         <a href="/courses/${c.id}/lessons/new/" class="btn btn-primary btn-full">Thêm bài học</a>
+        <a href="/courses/${c.id}/quizzes/" class="btn btn-outline btn-full" style="font-size:13px">Quản lý quiz</a>
       `;
       return;
     }
+
     if (isTeacher) {
       wrap.innerHTML = `<div style="text-align:center;font-size:13px;color:var(--muted)">Giáo viên không đăng ký khóa học.</div>`;
       return;
     }
+
     if (c.is_enrolled) {
       document.getElementById('progress-section').style.display = 'block';
-
       wrap.innerHTML = `
         <a href="#" class="btn btn-primary btn-full" id="btn-continue">
           <span>Đang tải...</span>
         </a>
+        <a href="/courses/${c.id}/quizzes/" class="btn btn-outline btn-full" style="font-size:13px">Kiểm tra</a>
         <button class="btn btn-danger btn-full" id="btn-unenroll" onclick="unenroll()" style="font-size:13px">
           <span class="btn-text">Hủy đăng ký</span>
           <div class="spinner"></div>
         </button>
       `;
-
       loadContinueLesson();
       return;
     }
+
     if (!Auth.isLoggedIn()) {
       wrap.innerHTML = `
         <a href="/accounts/login/?next=/courses/${c.id}/" class="btn btn-primary btn-full">
@@ -471,6 +503,7 @@
       `;
       return;
     }
+
     wrap.innerHTML = `
       <button class="btn btn-primary btn-full" id="btn-enroll" onclick="enroll()">
         <span class="btn-text">Đăng ký khóa học</span>
@@ -553,7 +586,9 @@
   function lockedLessonsHtml() {
     return `
       <div style="padding:32px;text-align:center">
-        <div style="font-size:40px;margin-bottom:12px">🔒</div>
+        <div style="font-size:40px;margin-bottom:12px">
+            <i class="fa-solid fa-lock"></i>
+        </div>
         <div style="font-size:15px;font-weight:600;margin-bottom:6px">Đăng ký để xem bài học</div>
         <div style="font-size:13px;color:var(--muted)">Bạn cần đăng ký khóa học để xem nội dung chi tiết.</div>
       </div>`;
