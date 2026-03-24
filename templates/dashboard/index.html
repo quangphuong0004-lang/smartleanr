@@ -1,0 +1,462 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <style>
+    .page-header { padding: 40px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+    .page-title { font-family: var(--font-display); font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+    .page-sub   { color: var(--text2); font-size: 14px; }
+
+    /* Stat cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat-card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 22px 24px;
+      position: relative; overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .stat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+    .stat-card::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    }
+    .stat-card.green::after  { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+    .stat-card.cyan::after   { background: linear-gradient(90deg, var(--accent2), #818cf8); }
+    .stat-card.amber::after  { background: linear-gradient(90deg, var(--accent3), #f59e0b); }
+    .stat-card.purple::after { background: linear-gradient(90deg, #a78bfa, #ec4899); }
+
+    .stat-icon  { font-size: 28px; margin-bottom: 10px; }
+    .stat-value { font-family: var(--font-display); font-size: 32px; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+    .stat-label { font-size: 13px; color: var(--text2); }
+    .stat-value.green  { color: var(--accent); }
+    .stat-value.cyan   { color: var(--accent2); }
+    .stat-value.amber  { color: var(--accent3); }
+    .stat-value.purple { color: #a78bfa; }
+
+    /* Layout 2 col */
+    .dashboard-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+    @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+    .section-card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 24px; margin-bottom: 20px;
+    }
+    .section-title {
+      font-family: var(--font-display); font-size: 15px; font-weight: 700;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+
+    /* Progress list */
+    .progress-item { margin-bottom: 16px; }
+    .progress-item:last-child { margin-bottom: 0; }
+    .progress-item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .progress-item-title  { font-size: 14px; font-weight: 500; }
+    .progress-item-meta   { font-size: 12px; color: var(--muted); }
+    .progress-item-pct    { font-size: 13px; font-weight: 700; color: var(--accent); }
+    .prog-bar-wrap { background: rgba(255,255,255,0.07); border-radius: 4px; height: 6px; }
+    .prog-bar      { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 1s ease; }
+
+    /* Activity feed */
+    .activity-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .activity-dot.green  { background: var(--accent); }
+    .activity-dot.cyan   { background: var(--accent2); }
+    .activity-dot.amber  { background: var(--accent3); }
+    .activity-text { font-size: 13px; line-height: 1.5; flex: 1; }
+    .activity-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+    /* Quiz table */
+    .quiz-table { width: 100%; border-collapse: collapse; }
+    .quiz-table th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 0; text-align: left; border-bottom: 1px solid var(--border); }
+    .quiz-table td { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; vertical-align: middle; }
+    .quiz-table tr:last-child td { border-bottom: none; }
+
+    /* Course card mini */
+    .course-mini {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .course-mini:last-child { border-bottom: none; }
+    .course-mini-thumb {
+      width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--bg2), var(--panel2));
+      display: flex; align-items: center; justify-content: center; font-size: 20px; overflow: hidden;
+    }
+    .course-mini-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .course-mini-info { flex: 1; min-width: 0; }
+    .course-mini-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .course-mini-meta  { font-size: 11px; color: var(--muted); }
+
+    /* Pending enrollment */
+    .pending-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .pending-item:last-child { border-bottom: none; }
+    .pending-name { font-size: 13px; font-weight: 500; flex: 1; }
+    .pending-course { font-size: 11px; color: var(--muted); }
+
+    /* Overall progress circle */
+    .overall-wrap { display: flex; align-items: center; gap: 20px; padding: 16px; background: rgba(255,255,255,0.02); border-radius: var(--radius); margin-bottom: 20px; }
+    .overall-circle { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+    .overall-circle svg { transform: rotate(-90deg); }
+    .oc-track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 7; }
+    .oc-fill  { fill: none; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 201; stroke-dashoffset: 201; transition: stroke-dashoffset 1.5s ease; stroke: url(#dashGrad); }
+    .overall-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .overall-pct  { font-family: var(--font-display); font-size: 18px; font-weight: 900; color: var(--accent); line-height: 1; }
+    .overall-sub  { font-size: 10px; color: var(--muted); }
+
+    .nav-logo-img { height: 60px; width: auto; object-fit: contain; }
+    .nav-logo { display: flex; align-items: center; }
+    .nav-logo-text { margin-left: -20px; }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-green"></div>
+  <div class="orb orb-cyan"></div>
+  <div class="orb orb-amber"></div>
+</div>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="dashGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<nav class="navbar z1">
+  <a href="/" class="nav-logo">
+    <img src="{% static 'images/smart_learn_logo.png' %}" alt="SmartLearn" class="nav-logo-img">
+    <span class="nav-logo-text">SmartLearn</span>
+  </a>
+  <div class="nav-links" id="navbar-links"></div>
+</nav>
+
+<div class="page z1">
+  <div class="page-inner-wide">
+
+    <div class="page-header animate-up">
+      <h1 class="page-title" id="dash-title">Dashboard</h1>
+      <p class="page-sub"   id="dash-sub">Đang tải...</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid animate-up delay-1" id="stats-grid">
+      <div class="stat-card green" style="opacity:0.4"><div style="height:60px;background:var(--panel2);border-radius:8px"></div></div>
+      <div class="stat-card cyan"  style="opacity:0.4"><div style="height:60px;background:var(--panel2);border-radius:8px"></div></div>
+      <div class="stat-card amber" style="opacity:0.4"><div style="height:60px;background:var(--panel2);border-radius:8px"></div></div>
+      <div class="stat-card purple" style="opacity:0.4"><div style="height:60px;background:var(--panel2);border-radius:8px"></div></div>
+    </div>
+
+    <!-- Main content -->
+    <div class="dashboard-grid animate-up delay-2" id="dashboard-main">
+      <div style="color:var(--muted);text-align:center;padding:40px">Đang tải...</div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  const API_BASE = 'http://localhost:8000';
+  buildNavbar('dashboard');
+  Auth.requireAuth();
+
+  const user = Auth.getUser();
+
+  async function loadDashboard() {
+    try {
+      const res  = await Auth.fetchWithAuth(`${API_BASE}/dashboard/api/`);
+      if (!res) return;
+      const data = await res.json();
+
+      if (data.role === 'student') renderStudent(data);
+      else renderTeacher(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // ── STUDENT ───────────────────────────────────────────────
+  function renderStudent(data) {
+    const s = data.stats;
+    document.getElementById('dash-title').textContent = `Xin chào, ${user?.full_name || user?.username}! 👋`;
+    document.getElementById('dash-sub').textContent   = 'Theo dõi tiến độ học tập của bạn';
+
+    document.getElementById('stats-grid').innerHTML = `
+      <div class="stat-card green">
+        <div class="stat-icon">📚</div>
+        <div class="stat-value green">${s.total_courses}</div>
+        <div class="stat-label">Khóa học</div>
+      </div>
+      <div class="stat-card cyan">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value cyan">${s.completed_lessons}/${s.total_lessons}</div>
+        <div class="stat-label">Bài đã hoàn thành</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon">📝</div>
+        <div class="stat-value amber">${s.passed_quizzes}/${s.total_quizzes}</div>
+        <div class="stat-label">Quiz đã qua</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-value purple">${s.avg_quiz_score}%</div>
+        <div class="stat-label">Điểm quiz TB</div>
+      </div>
+    `;
+
+    // Main grid
+    document.getElementById('dashboard-main').innerHTML = `
+      <!-- LEFT -->
+      <div>
+        <!-- Overall progress -->
+        <div class="section-card">
+          <div class="section-title">Tiến độ tổng thể</div>
+          <div class="overall-wrap">
+            <div class="overall-circle">
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle class="oc-track" cx="40" cy="40" r="32"/>
+                <circle class="oc-fill"  id="oc-fill" cx="40" cy="40" r="32"/>
+              </svg>
+              <div class="overall-text">
+                <div class="overall-pct" id="overall-pct">${s.overall_progress}%</div>
+                <div class="overall-sub">hoàn thành</div>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:15px;font-weight:700;margin-bottom:6px">
+                ${s.overall_progress >= 80 ? 'Xuất sắc!' : s.overall_progress >= 50 ? '💪 Đang tiến bộ!' : 'Tiếp tục cố gắng!'}
+              </div>
+              <div style="font-size:13px;color:var(--text2)">
+                ${s.completed_lessons} / ${s.total_lessons} bài học hoàn thành
+              </div>
+            </div>
+          </div>
+
+          <!-- Tiến độ từng khóa -->
+          ${data.course_progress.length ? data.course_progress.map(c => `
+            <div class="progress-item">
+              <div class="progress-item-header">
+                <div>
+                  <a href="/courses/${c.id}/" style="text-decoration:none">
+                    <div class="progress-item-title">${c.title}</div>
+                  </a>
+                  <div class="progress-item-meta">${c.completed}/${c.lesson_count} bài · ${c.teacher}</div>
+                </div>
+                <div class="progress-item-pct">${c.percentage}%</div>
+              </div>
+              <div class="prog-bar-wrap">
+                <div class="prog-bar" style="width:${c.percentage}%"></div>
+              </div>
+            </div>`).join('') : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Chưa đăng ký khóa học nào.</div>'}
+        </div>
+
+        <!-- Quiz gần đây -->
+        ${data.quiz_attempts.length ? `
+        <div class="section-card">
+          <div class="section-title">Quiz gần đây</div>
+          <table class="quiz-table">
+            <thead>
+              <tr>
+                <th>Quiz</th>
+                <th>Điểm</th>
+                <th>Kết quả</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.quiz_attempts.map(a => `
+                <tr>
+                  <td>
+                    <div style="font-weight:500">${a.quiz_title}</div>
+                    <div style="font-size:11px;color:var(--muted)">${a.course_title}</div>
+                  </td>
+                  <td style="font-family:var(--font-display);font-weight:700;color:${a.is_passed?'var(--accent)':'var(--danger)'}">${a.score}%</td>
+                  <td><span class="badge ${a.is_passed?'badge-green':'badge-muted'}">${a.is_passed?'Đạt':'Chưa đạt'}</span></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : ''}
+      </div>
+
+      <!-- RIGHT -->
+      <div>
+        <!-- Khóa học -->
+        <div class="section-card">
+          <div class="section-title">Khóa học của tôi</div>
+          ${data.course_progress.length ? data.course_progress.map(c => `
+            <div class="course-mini">
+              <div class="course-mini-thumb">
+                ${c.thumbnail_url ? `<img src="${c.thumbnail_url}" alt="" />` : '📚'}
+              </div>
+              <div class="course-mini-info">
+                <a href="/courses/${c.id}/" style="text-decoration:none">
+                  <div class="course-mini-title">${c.title}</div>
+                </a>
+                <div class="course-mini-meta">${c.subject || 'Chung'} · ${c.percentage}% hoàn thành</div>
+              </div>
+            </div>`).join('') : '<div style="color:var(--muted);font-size:13px;padding:8px 0">Chưa có khóa học.</div>'}
+          <a href="/courses/" class="btn btn-outline btn-full" style="font-size:13px;margin-top:12px">Khám phá thêm</a>
+        </div>
+
+        <!-- Hoạt động gần đây -->
+        <div class="section-card">
+          <div class="section-title">Hoạt động gần đây</div>
+          ${data.recent_activity.length ? data.recent_activity.map(a => `
+            <div class="activity-item">
+              <div class="activity-dot green"></div>
+              <div class="activity-text">
+                Hoàn thành <strong>${a.title}</strong>
+                <div style="font-size:11px;color:var(--muted)">${a.course}</div>
+              </div>
+              <div class="activity-time">${formatTime(a.time)}</div>
+            </div>`).join('') : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Chưa có hoạt động nào.</div>'}
+        </div>
+
+        <!-- Nhanh tới AI Tutor -->
+        <div class="section-card" style="background:linear-gradient(135deg,rgba(74,222,128,0.06),rgba(34,211,238,0.04));border-color:rgba(74,222,128,0.2)">
+          <div style="font-size:28px;margin-bottom:10px">🤖</div>
+          <div style="font-family:var(--font-display);font-size:15px;font-weight:700;margin-bottom:6px">AI Tutor</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Đặt câu hỏi, nhận giải thích ngay lập tức từ AI</div>
+          <a href="/ai-tutor/" class="btn btn-primary btn-full" style="font-size:13px">Hỏi AI ngay</a>
+        </div>
+      </div>
+    `;
+
+    // Animate circle
+    setTimeout(() => {
+      const el = document.getElementById('oc-fill');
+      if (el) el.style.strokeDashoffset = 201 * (1 - s.overall_progress / 100);
+    }, 300);
+  }
+
+  // ── TEACHER ───────────────────────────────────────────────
+  function renderTeacher(data) {
+    const s = data.stats;
+    document.getElementById('dash-title').textContent = `Xin chào, ${user?.full_name || user?.username}!`;
+    document.getElementById('dash-sub').textContent   = 'Tổng quan lớp học của bạn';
+
+    document.getElementById('stats-grid').innerHTML = `
+      <div class="stat-card green">
+        <div class="stat-icon">📚</div>
+        <div class="stat-value green">${s.total_courses}</div>
+        <div class="stat-label">Khóa học đã tạo</div>
+      </div>
+      <div class="stat-card cyan">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value cyan">${s.total_students}</div>
+        <div class="stat-label">Tổng học sinh</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon">📄</div>
+        <div class="stat-value amber">${s.total_lessons}</div>
+        <div class="stat-label">Bài học đã tạo</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon">📝</div>
+        <div class="stat-value purple">${s.total_quizzes}</div>
+        <div class="stat-label">Bài kiểm tra</div>
+      </div>
+    `;
+
+    document.getElementById('dashboard-main').innerHTML = `
+      <!-- LEFT -->
+      <div>
+        <!-- Khóa học -->
+        <div class="section-card">
+          <div class="section-title">Khóa học của tôi
+            <a href="/courses/create/" class="btn btn-primary" style="margin-left:auto;font-size:12px;padding:6px 14px">＋ Tạo mới</a>
+          </div>
+          ${data.course_stats.map(c => `
+            <div class="course-mini">
+              <div class="course-mini-thumb">
+                ${c.thumbnail_url ? `<img src="${c.thumbnail_url}" alt="" />` : '📚'}
+              </div>
+              <div class="course-mini-info">
+                <a href="/courses/${c.id}/" style="text-decoration:none">
+                  <div class="course-mini-title">${c.title}</div>
+                </a>
+                <div class="course-mini-meta">${c.subject || 'Chung'} · ${c.student_count} học sinh · ${c.lesson_count} bài</div>
+              </div>
+              <span class="badge ${c.status==='public'?'badge-green':'badge-muted'}" style="flex-shrink:0">${c.status==='public'?'Công khai':'Nháp'}</span>
+            </div>`).join('') || '<div style="color:var(--muted);font-size:13px;padding:8px 0">Chưa tạo khóa học nào.</div>'}
+        </div>
+
+        <!-- Quiz performance -->
+        ${data.quiz_stats.length ? `
+        <div class="section-card">
+          <div class="section-title">Hiệu suất Quiz</div>
+          <table class="quiz-table">
+            <thead><tr><th>Quiz</th><th>Số lượt</th><th>Tỷ lệ đạt</th><th>Điểm TB</th></tr></thead>
+            <tbody>
+              ${data.quiz_stats.map(q => `
+                <tr>
+                  <td>
+                    <div style="font-weight:500">${q.title}</div>
+                    <div style="font-size:11px;color:var(--muted)">${q.course}</div>
+                  </td>
+                  <td>${q.total}</td>
+                  <td><span class="badge ${q.pass_rate>=70?'badge-green':'badge-amber'}">${q.pass_rate}%</span></td>
+                  <td style="font-weight:700;color:var(--accent)">${q.avg_score}%</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : ''}
+      </div>
+
+      <!-- RIGHT -->
+      <div>
+        <!-- Yêu cầu chờ duyệt -->
+        <div class="section-card">
+          <div class="section-title">Chờ duyệt
+            ${data.pending_enrollments.length ? `<span class="badge badge-amber" style="margin-left:auto">${data.pending_enrollments.length}</span>` : ''}
+          </div>
+          ${data.pending_enrollments.length ? data.pending_enrollments.map(e => `
+            <div class="pending-item">
+              <div>
+                <div class="pending-name">${e.student}</div>
+                <div class="pending-course">${e.course}</div>
+              </div>
+              <a href="/courses/${e.course_id}/enrollments/" class="btn btn-outline" style="font-size:11px;padding:5px 10px">Xem</a>
+            </div>`).join('') : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Không có yêu cầu nào.</div>'}
+        </div>
+
+        <!-- Quick links -->
+        <div class="section-card">
+          <div class="section-title">Truy cập nhanh</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <a href="/courses/create/"  class="btn btn-outline btn-full" style="font-size:13px;justify-content:flex-start;gap:10px">Tạo khóa học mới</a>
+            <a href="/courses/my/"      class="btn btn-outline btn-full" style="font-size:13px;justify-content:flex-start;gap:10px">Quản lý khóa học</a>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function formatTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60)   return 'Vừa xong';
+    if (diff < 3600) return `${Math.floor(diff/60)} phút trước`;
+    if (diff < 86400)return `${Math.floor(diff/3600)} giờ trước`;
+    return `${Math.floor(diff/86400)} ngày trước`;
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>
