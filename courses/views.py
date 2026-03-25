@@ -15,6 +15,15 @@ from .serializers import (
     EnrollmentSerializer,
 )
 
+#Gọi thông báo
+from notifications.utils import (
+    notify_enroll_request,
+    notify_enroll_approved,
+    notify_enroll_rejected,
+    notify_new_lesson,
+    notify_new_quiz,
+)
+
 def is_teacher(user):
     return user.is_authenticated and user.role == 'teacher'
 

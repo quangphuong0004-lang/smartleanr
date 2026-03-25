@@ -222,6 +222,7 @@ function buildNavbar(activePage = '') {
     ${myCoursesLink}
     <a href="/dashboard/" class="nav-link ${activePage === 'dashboard' ? 'active' : ''}">Dashboard</a>
     ${createCourseLink}
+
     <div style="position:relative">
  
       ${_navAvatarHtml(user)}

@@ -29,6 +29,7 @@ urlpatterns = [
     path('courses/', include('courses.urls', namespace='courses')),
     path('', include('quizzes.urls', namespace='quizzes')),
     path('dashboard/', include('dashboard.urls', namespace='dashboard')),
+    path('', include('notifications.urls', namespace='notifications')),
     
 ]+ static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])\
     + static(settings.MEDIA_URL,  document_root=settings.MEDIA_ROOT)

@@ -192,7 +192,7 @@
   // ── STUDENT ───────────────────────────────────────────────
   function renderStudent(data) {
     const s = data.stats;
-    document.getElementById('dash-title').textContent = `Xin chào, ${user?.full_name || user?.username}! 👋`;
+    document.getElementById('dash-title').textContent = `Xin chào, ${user?.full_name || user?.username}!`;
     document.getElementById('dash-sub').textContent   = 'Theo dõi tiến độ học tập của bạn';
 
     document.getElementById('stats-grid').innerHTML = `
@@ -202,7 +202,6 @@
         <div class="stat-label">Khóa học</div>
       </div>
       <div class="stat-card cyan">
-        <div class="stat-icon">✅</div>
         <div class="stat-value cyan">${s.completed_lessons}/${s.total_lessons}</div>
         <div class="stat-label">Bài đã hoàn thành</div>
       </div>

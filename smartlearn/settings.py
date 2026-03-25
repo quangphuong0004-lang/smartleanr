@@ -33,7 +33,6 @@ INSTALLED_APPS = [
     'quizzes',
     'chat',
     'ai_tutor',
-    'live_quiz',
     'notifications',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',

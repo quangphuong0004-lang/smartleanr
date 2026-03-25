@@ -239,3 +239,61 @@ body::before {
 .page-inner { max-width: 480px; margin: 0 auto; padding: 60px 20px; }
 .page-inner-wide { max-width: 960px; margin: 0 auto; padding: 60px 24px; }
 
+/* Notifications */
+.notif-wrapper {
+  position: relative;
+  margin-left: 16px;
+}
+
+.notif-icon {
+  position: relative;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: red;
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 50%;
+}
+
+.notif-dropdown {
+  position: absolute;
+  right: 0;
+  top: 32px;
+  width: 320px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: none;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.notif-header {
+  padding: 10px;
+  font-weight: bold;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+}
+
+.notif-item {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.notif-item:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.notif-item.unread {
+  font-weight: bold;
+}
