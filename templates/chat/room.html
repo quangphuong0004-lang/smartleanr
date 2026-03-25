@@ -1,0 +1,353 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <style>
+    body { overflow: hidden; }
+    .chat-layout {
+      display: flex; flex-direction: column;
+      height: calc(100vh - 68px); margin-top: 68px;
+    }
+
+    /* Header */
+    .chat-header {
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 16px 24px; display: flex; align-items: center; gap: 14px;
+      flex-shrink: 0;
+    }
+    .chat-header-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(34,211,238,0.15));
+      border: 1px solid rgba(74,222,128,0.2);
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .chat-header-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; }
+    .chat-header-meta  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .chat-online-dot   { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-left: auto; flex-shrink: 0; animation: blink 2s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .chat-online-label { font-size: 12px; color: var(--accent); }
+
+    /* Messages area */
+    .messages-area {
+      flex: 1; overflow-y: auto; padding: 20px 24px;
+      display: flex; flex-direction: column; gap: 2px;
+      scroll-behavior: smooth;
+    }
+    .messages-area::-webkit-scrollbar { width: 4px; }
+    .messages-area::-webkit-scrollbar-track { background: transparent; }
+    .messages-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    /* Date separator */
+    .date-sep {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 11px; color: var(--muted); margin: 12px 0; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .date-sep::before, .date-sep::after { content:''; flex:1; height:1px; background:var(--border); }
+
+    /* System message */
+    .sys-msg {
+      text-align: center; font-size: 12px; color: var(--muted);
+      padding: 6px 0; font-style: italic;
+    }
+
+    /* Message bubble */
+    .msg-wrap { display: flex; gap: 10px; margin-bottom: 4px; align-items: flex-end; }
+    .msg-wrap.mine { flex-direction: row-reverse; }
+    .msg-wrap.mine + .msg-wrap:not(.mine),
+    .msg-wrap:not(.mine) + .msg-wrap.mine { margin-top: 10px; }
+
+    .msg-avatar {
+      width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #080c14; overflow: hidden;
+      align-self: flex-end;
+    }
+    .msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .msg-avatar.hidden { visibility: hidden; }
+
+    .msg-content { max-width: 70%; display: flex; flex-direction: column; gap: 2px; }
+    .msg-sender  { font-size: 11px; color: var(--muted); padding: 0 4px; }
+    .msg-wrap.mine .msg-sender { text-align: right; }
+
+    .msg-bubble {
+      padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.5;
+      word-break: break-word;
+    }
+    .msg-bubble.theirs {
+      background: var(--panel2); border: 1px solid var(--border);
+      border-bottom-left-radius: 4px; color: var(--text);
+    }
+    .msg-bubble.mine {
+      background: linear-gradient(135deg, rgba(74,222,128,0.15), rgba(34,211,238,0.12));
+      border: 1px solid rgba(74,222,128,0.2);
+      border-bottom-right-radius: 4px; color: var(--text);
+    }
+    .msg-time { font-size: 10px; color: var(--muted); padding: 0 4px; }
+    .msg-wrap.mine .msg-time { text-align: right; }
+
+    /* Typing indicator */
+    .typing-indicator { display: flex; gap: 4px; padding: 10px 14px; }
+    .typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: typing 1.4s ease-in-out infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+    /* Input area */
+    .chat-input-area {
+      background: var(--panel); border-top: 1px solid var(--border);
+      padding: 16px 24px; flex-shrink: 0;
+    }
+    .chat-input-wrap {
+      display: flex; gap: 10px; align-items: flex-end;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border2);
+      border-radius: 16px; padding: 10px 14px;
+      transition: border-color 0.2s;
+    }
+    .chat-input-wrap:focus-within { border-color: var(--accent); }
+    .chat-input {
+      flex: 1; background: none; border: none; color: var(--text);
+      font-family: var(--font-body); font-size: 14px; outline: none;
+      resize: none; min-height: 22px; max-height: 120px; line-height: 1.5;
+    }
+    .chat-input::placeholder { color: var(--muted); }
+    .chat-send-btn {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none; color: #080c14; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .chat-send-btn:hover { opacity: 0.85; transform: scale(1.05); }
+    .chat-send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* Connection status */
+    .conn-status {
+      text-align: center; font-size: 12px; padding: 6px;
+      transition: all 0.3s;
+    }
+    .conn-status.connected    { color: var(--accent); }
+    .conn-status.disconnected { color: var(--danger); }
+    .conn-status.connecting   { color: var(--accent3); }
+
+    .nav-logo-img { height: 60px; width: auto; object-fit: contain; }
+    .nav-logo { display: flex; align-items: center; }
+    .nav-logo-text { margin-left: -20px; }
+  </style>
+</head>
+<body>
+<nav class="navbar z1">
+  <a href="/" class="nav-logo">
+    <img src="{% static 'images/smart_learn_logo.png' %}" alt="SmartLearn" class="nav-logo-img">
+    <span class="nav-logo-text">SmartLearn</span>
+  </a>
+  <div class="nav-links" id="navbar-links"></div>
+</nav>
+
+<div class="chat-layout z1">
+  <!-- Header -->
+  <div class="chat-header">
+    <div class="chat-header-icon">💬</div>
+    <div>
+      <div class="chat-header-title" id="chat-title">Đang tải...</div>
+      <div class="chat-header-meta">
+        <a href="#" id="chat-back" style="color:var(--text2);text-decoration:none">← Về trang khóa học</a>
+      </div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+      <div class="chat-online-dot"></div>
+      <span class="chat-online-label" id="online-label">Kết nối...</span>
+    </div>
+  </div>
+
+  <!-- Connection status -->
+  <div class="conn-status connecting" id="conn-status">⏳ Đang kết nối...</div>
+
+  <!-- Messages -->
+  <div class="messages-area" id="messages-area">
+    <div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">Đang tải lịch sử chat...</div>
+  </div>
+
+  <!-- Input -->
+  <div class="chat-input-area">
+    <div class="chat-input-wrap">
+      <textarea class="chat-input" id="chat-input"
+                placeholder="Nhập tin nhắn..."
+                rows="1"
+                onkeydown="handleKeydown(event)"
+                oninput="autoResize(this)"></textarea>
+      <button class="chat-send-btn" id="send-btn" onclick="sendMessage()" disabled>
+        ➤
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  const WS_BASE    = 'ws://localhost:8000';
+  const API_BASE   = 'http://localhost:8000';
+  const parts      = window.location.pathname.split('/').filter(Boolean);
+  const courseId   = parts[1];
+
+  let ws       = null;
+  let myId     = null;
+  let lastSenderId = null;
+
+  buildNavbar('courses');
+  Auth.requireAuth();
+
+  const user = Auth.getUser();
+  myId       = user?.id;
+
+  // Load course name
+  async function initChat() {
+    try {
+      const res  = await fetch(`${API_BASE}/courses/api/${courseId}/`);
+      const data = await res.json();
+      document.getElementById('chat-title').textContent = `💬 ${data.title}`;
+      document.getElementById('chat-back').href         = `/courses/${courseId}/`;
+      document.title = `Chat — ${data.title}`;
+    } catch {}
+
+    connectWebSocket();
+  }
+
+  function connectWebSocket() {
+    const token = localStorage.getItem('sl_access');
+    ws = new WebSocket(`${WS_BASE}/ws/chat/${courseId}/?token=${token}`);
+
+    ws.onopen = () => {
+      document.getElementById('conn-status').textContent = '';
+      document.getElementById('conn-status').className   = 'conn-status connected';
+      document.getElementById('online-label').textContent = 'Trực tuyến';
+      document.getElementById('send-btn').disabled = false;
+    };
+
+    ws.onclose = () => {
+      document.getElementById('conn-status').textContent  = '🔴 Mất kết nối — Đang thử lại...';
+      document.getElementById('conn-status').className    = 'conn-status disconnected';
+      document.getElementById('online-label').textContent = 'Ngoại tuyến';
+      document.getElementById('send-btn').disabled        = true;
+      setTimeout(connectWebSocket, 3000);
+    };
+
+    ws.onerror = () => {
+      document.getElementById('conn-status').textContent = '⚠️ Lỗi kết nối WebSocket';
+      document.getElementById('conn-status').className   = 'conn-status disconnected';
+    };
+
+    ws.onmessage = e => {
+      const data = JSON.parse(e.data);
+      handleWSMessage(data);
+    };
+  }
+
+  function handleWSMessage(data) {
+    const area = document.getElementById('messages-area');
+    const isAtBottom = area.scrollHeight - area.clientHeight - area.scrollTop < 80;
+
+    if (data.type === 'history') {
+      area.innerHTML = '';
+      if (!data.messages.length) {
+        area.innerHTML = '<div class="sys-msg">Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!</div>';
+        return;
+      }
+      area.innerHTML = '<div class="date-sep">Lịch sử chat</div>';
+      data.messages.forEach(m => appendMessage(m));
+      area.scrollTop = area.scrollHeight;
+      return;
+    }
+
+    if (data.type === 'message') {
+      appendMessage(data);
+      if (isAtBottom || data.sender_id === myId) {
+        area.scrollTop = area.scrollHeight;
+      }
+      return;
+    }
+
+    if (data.type === 'user_join') {
+      if (data.user_id !== myId) {
+        appendSysMsg(`${data.username} đã tham gia phòng chat`);
+      }
+      return;
+    }
+
+    if (data.type === 'user_leave') {
+      if (data.user_id !== myId) {
+        appendSysMsg(`${data.username} đã rời phòng chat`);
+      }
+    }
+  }
+
+  function appendMessage(m) {
+    const area   = document.getElementById('messages-area');
+    const isMine = m.sender_id === myId;
+    const time   = new Date(m.created_at).toLocaleTimeString('vi', {hour:'2-digit', minute:'2-digit'});
+    const showSender = lastSenderId !== m.sender_id;
+    lastSenderId = m.sender_id;
+
+    const avatarHtml = m.avatar_url
+      ? `<div class="msg-avatar ${!showSender && !isMine ? 'hidden' : ''}"><img src="${m.avatar_url}" alt="" /></div>`
+      : `<div class="msg-avatar ${!showSender && !isMine ? 'hidden' : ''}">${(m.sender_name||'?')[0].toUpperCase()}</div>`;
+
+    const el = document.createElement('div');
+    el.className = `msg-wrap ${isMine ? 'mine' : ''}`;
+    el.innerHTML = `
+      ${isMine ? '' : avatarHtml}
+      <div class="msg-content">
+        ${showSender && !isMine ? `<div class="msg-sender">${m.sender_name}</div>` : ''}
+        <div class="msg-bubble ${isMine ? 'mine' : 'theirs'}">${escHtml(m.content)}</div>
+        <div class="msg-time">${time}</div>
+      </div>
+      ${isMine ? avatarHtml : ''}
+    `;
+    area.appendChild(el);
+  }
+
+  function appendSysMsg(text) {
+    const area = document.getElementById('messages-area');
+    const el   = document.createElement('div');
+    el.className = 'sys-msg';
+    el.textContent = text;
+    area.appendChild(el);
+    area.scrollTop = area.scrollHeight;
+    lastSenderId = null;
+  }
+
+  function sendMessage() {
+    const input   = document.getElementById('chat-input');
+    const content = input.value.trim();
+    if (!content || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+    ws.send(JSON.stringify({ type: 'message', content }));
+    input.value = '';
+    input.style.height = 'auto';
+  }
+
+  function handleKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  function escHtml(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  }
+
+  initChat();
+</script>
+</body>
+</html>

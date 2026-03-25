@@ -1,0 +1,215 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thông báo — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <style>
+    .page-header { padding: 40px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+    .page-header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .page-title { font-family: var(--font-display); font-size: 26px; font-weight: 800; }
+
+    .notif-wrap { max-width: 680px; }
+
+    /* Filter tabs */
+    .filter-tabs { display: flex; gap: 4px; margin-bottom: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 4px; width: fit-content; }
+    .filter-tab  { padding: 8px 18px; border: none; background: transparent; color: var(--text2); font-family: var(--font-display); font-size: 13px; font-weight: 600; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+    .filter-tab.active { background: var(--panel2); color: var(--text); }
+
+    /* Notif item */
+    .notif-item {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 16px 20px; background: var(--panel);
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      margin-bottom: 10px; cursor: pointer; transition: all 0.2s;
+      position: relative;
+    }
+    .notif-item:hover { border-color: var(--border2); background: rgba(255,255,255,0.03); }
+    .notif-item.unread { border-color: rgba(74,222,128,0.2); background: rgba(74,222,128,0.03); }
+    .notif-item.unread::before {
+      content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+      height: 60%; width: 3px; background: var(--accent); border-radius: 0 2px 2px 0;
+    }
+
+    .notif-icon {
+      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .notif-icon.enroll_request  { background: rgba(251,146,60,0.12); }
+    .notif-icon.enroll_approved { background: rgba(74,222,128,0.12); }
+    .notif-icon.enroll_rejected { background: rgba(248,113,113,0.12); }
+    .notif-icon.new_lesson      { background: rgba(34,211,238,0.12); }
+    .notif-icon.new_quiz        { background: rgba(167,139,250,0.12); }
+    .notif-icon.quiz_result     { background: rgba(251,191,36,0.12); }
+    .notif-icon.system          { background: rgba(255,255,255,0.06); }
+
+    .notif-content { flex: 1; min-width: 0; }
+    .notif-title   { font-size: 14px; font-weight: 600; margin-bottom: 4px; line-height: 1.4; }
+    .notif-message { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 6px; }
+    .notif-time    { font-size: 12px; color: var(--muted); }
+
+    .notif-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .notif-btn {
+      padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      cursor: pointer; border: 1px solid var(--border); background: none; color: var(--text2);
+      transition: all 0.2s; font-family: var(--font-body);
+    }
+    .notif-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .notif-btn.delete:hover { border-color: var(--danger); color: var(--danger); }
+
+    .empty-state { text-align: center; padding: 64px 24px; }
+    .empty-icon  { font-size: 52px; margin-bottom: 16px; opacity: 0.35; }
+    .empty-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text2); }
+    .empty-desc  { font-size: 14px; color: var(--muted); }
+
+    .nav-logo-img { height: 60px; width: auto; object-fit: contain; }
+    .nav-logo { display: flex; align-items: center; }
+    .nav-logo-text { margin-left: -20px; }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-green"></div>
+  <div class="orb orb-cyan"></div>
+</div>
+
+<nav class="navbar z1">
+  <a href="/" class="nav-logo">
+    <img src="{% static 'images/smart_learn_logo.png' %}" alt="SmartLearn" class="nav-logo-img">
+    <span class="nav-logo-text">SmartLearn</span>
+  </a>
+  <div class="nav-links" id="navbar-links"></div>
+</nav>
+
+<div class="page z1">
+  <div class="page-inner notif-wrap">
+
+    <div class="page-header animate-up">
+      <div class="page-header-row">
+        <h1 class="page-title">Thông báo</h1>
+        <button class="btn btn-outline" style="font-size:13px" onclick="markAllRead()">
+          ✓ Đánh dấu tất cả đã đọc
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="filter-tabs animate-up delay-1">
+      <button class="filter-tab active" onclick="setFilter('all',this)">Tất cả</button>
+      <button class="filter-tab" onclick="setFilter('unread',this)">Chưa đọc</button>
+    </div>
+
+    <div id="notif-list" class="animate-up delay-2">
+      <div style="text-align:center;color:var(--muted);padding:32px">Đang tải...</div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  const API    = 'http://localhost:8000/api/notifications';
+  let allNotifs = [];
+  let filter    = 'all';
+
+  buildNavbar('');
+  Auth.requireAuth();
+
+  const ICONS = {
+    enroll_request:'📩', enroll_approved:'✅', enroll_rejected:'❌',
+    new_lesson:'📄', new_quiz:'📝', quiz_result:'🏆', system:'🔔',
+  };
+
+  async function loadNotifications() {
+    try {
+      const res  = await Auth.fetchWithAuth(`${API}/`);
+      if (!res) return;
+      const data = await res.json();
+      allNotifs  = data.notifications || [];
+      renderList();
+    } catch {}
+  }
+
+  function setFilter(f, btn) {
+    filter = f;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    renderList();
+  }
+
+  function renderList() {
+    const list = document.getElementById('notif-list');
+    const shown = filter === 'unread' ? allNotifs.filter(n => !n.is_read) : allNotifs;
+
+    if (!shown.length) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🔔</div>
+          <div class="empty-title">${filter === 'unread' ? 'Không có thông báo chưa đọc' : 'Chưa có thông báo nào'}</div>
+          <div class="empty-desc">Các thông báo về khóa học, quiz sẽ hiển thị ở đây.</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = shown.map(n => `
+      <div class="notif-item ${n.is_read ? '' : 'unread'}" id="notif-${n.id}"
+           onclick="handleClick('${n.id}','${n.url}')">
+        <div class="notif-icon ${n.type}">${ICONS[n.type]||'🔔'}</div>
+        <div class="notif-content">
+          <div class="notif-title">${n.title}</div>
+          ${n.message ? `<div class="notif-message">${n.message}</div>` : ''}
+          <div class="notif-time">${timeAgo(n.created_at)}</div>
+        </div>
+        <div class="notif-actions" onclick="event.stopPropagation()">
+          ${!n.is_read ? `<button class="notif-btn" onclick="markRead('${n.id}')">✓ Đọc</button>` : ''}
+          <button class="notif-btn delete" onclick="deleteNotif('${n.id}')">🗑</button>
+        </div>
+      </div>`).join('');
+  }
+
+  async function handleClick(id, url) {
+    await markRead(id);
+    if (url && url !== 'None' && url !== '') window.location.href = url;
+  }
+
+  async function markRead(id) {
+    try {
+      await Auth.fetchWithAuth(`${API}/${id}/`, { method: 'PATCH' });
+      const n = allNotifs.find(x => x.id === id);
+      if (n) n.is_read = true;
+      renderList();
+    } catch {}
+  }
+
+  async function markAllRead() {
+    try {
+      await Auth.fetchWithAuth(`${API}/read-all/`, { method: 'POST' });
+      allNotifs.forEach(n => n.is_read = true);
+      renderList();
+    } catch {}
+  }
+
+  async function deleteNotif(id) {
+    try {
+      await Auth.fetchWithAuth(`${API}/${id}/delete/`, { method: 'DELETE' });
+      allNotifs = allNotifs.filter(n => n.id !== id);
+      renderList();
+    } catch {}
+  }
+
+  function timeAgo(iso) {
+    if (!iso) return '';
+    const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+    if (diff < 60)    return 'Vừa xong';
+    if (diff < 3600)  return `${Math.floor(diff/60)} phút trước`;
+    if (diff < 86400) return `${Math.floor(diff/3600)} giờ trước`;
+    return new Date(iso).toLocaleDateString('vi');
+  }
+
+  loadNotifications();
+</script>
+</body>
+</html>

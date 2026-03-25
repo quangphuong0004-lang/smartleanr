@@ -20,6 +20,7 @@ urlpatterns = [
     path('<uuid:pk>/lessons/new/', TemplateView.as_view(template_name='courses/lesson_create_edit.html'), name='lesson-create'),
     path('<uuid:pk>/lessons/<uuid:lid>/edit/', TemplateView.as_view(template_name='courses/lesson_create_edit.html'), name='lesson-edit'),
     path('<uuid:pk>/lessons/<uuid:lid>/', TemplateView.as_view(template_name='courses/lesson_detail.html'), name='lesson'),
+    path('<uuid:pk>/enrollments/', TemplateView.as_view(template_name='courses/enrollments.html'), name='enrollments-page'),
 
     #api
     path('api/', CourseListView.as_view(), name='course-list'),

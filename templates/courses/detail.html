@@ -381,6 +381,9 @@
       isOwner = data.teacher?.id === user?.id || user?.role === 'admin';
 
       renderCourse(data);
+      if (data.is_enrolled || isOwner) {
+        initChatPanel(courseId, data.title);
+      }
       initJoinCode(data);
       loadLessons();
       if (data.is_enrolled) loadProgress();

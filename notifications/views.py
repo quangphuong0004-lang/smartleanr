@@ -64,4 +64,3 @@ class NotificationDeleteView(APIView):
             return Response({'message': 'Đã xóa.'})
         except Notification.DoesNotExist:
             return Response({'error': 'Không tìm thấy.'}, status=404)
- 

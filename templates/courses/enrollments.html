@@ -1,0 +1,231 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý học sinh — SmartLearn</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <style>
+    .breadcrumb { display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:24px;flex-wrap:wrap; }
+    .breadcrumb a { color:var(--text2);transition:color 0.2s; } .breadcrumb a:hover { color:var(--accent); }
+    .breadcrumb-sep { opacity:0.4; }
+    .page-header { padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:28px; }
+    .page-header-row { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px; }
+    .page-title { font-family:var(--font-display);font-size:24px;font-weight:800; }
+
+    /* Tabs */
+    .tabs { display:flex;gap:4px;margin-bottom:24px;background:rgba(255,255,255,0.03);border-radius:12px;padding:4px;width:fit-content; }
+    .tab  { padding:8px 20px;border:none;background:transparent;color:var(--text2);font-family:var(--font-display);font-size:13px;font-weight:600;border-radius:10px;cursor:pointer;transition:all 0.2s; display:flex;align-items:center;gap:6px; }
+    .tab.active { background:var(--panel2);color:var(--text); }
+    .tab-count  { font-size:11px;background:rgba(255,255,255,0.1);padding:1px 6px;border-radius:8px; }
+    .tab.active .tab-count.pending { background:rgba(251,146,60,0.2);color:var(--accent3); }
+
+    /* Student list */
+    .student-item {
+      display:flex;align-items:center;gap:14px;
+      padding:14px 18px;background:var(--panel);border:1px solid var(--border);
+      border-radius:var(--radius-lg);margin-bottom:10px;transition:border-color 0.2s;
+    }
+    .student-item:hover { border-color:var(--border2); }
+    .student-avatar {
+      width:40px;height:40px;border-radius:10px;flex-shrink:0;overflow:hidden;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      display:flex;align-items:center;justify-content:center;
+      font-size:16px;font-weight:700;color:#080c14;
+    }
+    .student-avatar img { width:100%;height:100%;object-fit:cover; }
+    .student-info  { flex:1;min-width:0; }
+    .student-name  { font-size:14px;font-weight:600;margin-bottom:2px; }
+    .student-email { font-size:12px;color:var(--muted); }
+    .student-meta  { font-size:12px;color:var(--text2);margin-top:2px; }
+    .student-actions { display:flex;gap:8px;flex-shrink:0; }
+
+    .empty-state { text-align:center;padding:52px 24px; }
+    .empty-icon  { font-size:48px;margin-bottom:14px;opacity:0.35; }
+    .empty-title { font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--text2);margin-bottom:6px; }
+    .empty-desc  { font-size:13px;color:var(--muted); }
+
+    .nav-logo-img { height:60px;width:auto;object-fit:contain; }
+    .nav-logo { display:flex;align-items:center; }
+    .nav-logo-text { margin-left:-20px; }
+  </style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-green"></div>
+  <div class="orb orb-cyan"></div>
+</div>
+
+<nav class="navbar z1">
+  <a href="/" class="nav-logo">
+    <img src="{% static 'images/smart_learn_logo.png' %}" alt="SmartLearn" class="nav-logo-img">
+    <span class="nav-logo-text">SmartLearn</span>
+  </a>
+  <div class="nav-links" id="navbar-links"></div>
+</nav>
+
+<div class="page z1">
+  <div class="page-inner-wide">
+
+    <div class="breadcrumb animate-up">
+      <a href="/courses/">Khóa học</a>
+      <span class="breadcrumb-sep">›</span>
+      <a href="#" id="bc-course">Đang tải...</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>Quản lý học sinh</span>
+    </div>
+
+    <div class="page-header animate-up">
+      <div class="page-header-row">
+        <h1 class="page-title">Quản lý học sinh</h1>
+        <a href="#" id="back-btn" class="btn btn-outline" style="font-size:13px">← Về khóa học</a>
+      </div>
+    </div>
+
+    <div class="alert" id="page-alert"></div>
+
+    <div class="tabs animate-up delay-1">
+      <button class="tab active" onclick="switchTab('approved',this)">
+        Đã duyệt <span class="tab-count" id="count-approved">0</span>
+      </button>
+      <button class="tab" onclick="switchTab('pending',this)">
+        Chờ duyệt <span class="tab-count pending" id="count-pending">0</span>
+      </button>
+      <button class="tab" onclick="switchTab('rejected',this)">
+        Đã từ chối <span class="tab-count" id="count-rejected">0</span>
+      </button>
+    </div>
+
+    <div id="student-list" class="animate-up delay-2">
+      <div style="text-align:center;color:var(--muted);padding:32px">Đang tải...</div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+<script>
+  const COURSES_API = 'http://localhost:8000/courses/api';
+  const parts       = window.location.pathname.split('/').filter(Boolean);
+  const courseId    = parts[1];
+  let allEnrollments = [];
+  let currentTab     = 'approved';
+
+  buildNavbar('courses');
+  Auth.requireAuth();
+
+  document.getElementById('back-btn').href = `/courses/${courseId}/`;
+
+  async function init() {
+    // Load course name
+    try {
+      const res  = await fetch(`${COURSES_API}/${courseId}/`);
+      const data = await res.json();
+      document.getElementById('bc-course').textContent = data.title;
+      document.getElementById('bc-course').href = `/courses/${courseId}/`;
+    } catch {}
+    loadEnrollments();
+  }
+
+  async function loadEnrollments() {
+    try {
+      const res  = await Auth.fetchWithAuth(`${COURSES_API}/${courseId}/enrollments/`);
+      if (!res) return;
+      allEnrollments = await res.json();
+      updateCounts();
+      renderList();
+    } catch {}
+  }
+
+  function updateCounts() {
+    document.getElementById('count-approved').textContent = allEnrollments.filter(e => e.status==='approved').length;
+    document.getElementById('count-pending').textContent  = allEnrollments.filter(e => e.status==='pending').length;
+    document.getElementById('count-rejected').textContent = allEnrollments.filter(e => e.status==='rejected').length;
+  }
+
+  function switchTab(tab, btn) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    renderList();
+  }
+
+  function renderList() {
+    const list    = document.getElementById('student-list');
+    const filtered = allEnrollments.filter(e => e.status === currentTab);
+
+    if (!filtered.length) {
+      const msgs = { approved:'Chưa có học sinh nào được duyệt.', pending:'Không có yêu cầu nào đang chờ.', rejected:'Không có yêu cầu nào bị từ chối.' };
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">${currentTab==='approved'?'':''}</div>
+          <div class="empty-title">${msgs[currentTab]}</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(e => {
+      const av = e.student?.avatar_url
+        ? `<div class="student-avatar"><img src="${e.student.avatar_url}" alt="" /></div>`
+        : `<div class="student-avatar">${(e.student?.full_name || e.student?.username || '?')[0].toUpperCase()}</div>`;
+
+      const actions = currentTab === 'pending' ? `
+        <button class="btn btn-primary" style="font-size:12px;padding:7px 14px" onclick="updateStatus('${e.id}','approved')">
+          <span class="btn-text">Duyệt</span><div class="spinner"></div>
+        </button>
+        <button class="btn btn-danger"  style="font-size:12px;padding:7px 14px" onclick="updateStatus('${e.id}','rejected')">
+          <span class="btn-text">Từ chối</span><div class="spinner"></div>
+        </button>
+      ` : currentTab === 'approved' ? `
+        <button class="btn btn-outline" style="font-size:12px;padding:7px 14px" onclick="updateStatus('${e.id}','rejected')">
+          Xóa khỏi lớp
+        </button>
+      ` : `
+        <button class="btn btn-outline" style="font-size:12px;padding:7px 14px" onclick="updateStatus('${e.id}','approved')">
+          Duyệt lại
+        </button>
+      `;
+
+      const enrollDate = e.enrolled_at ? new Date(e.enrolled_at).toLocaleDateString('vi') : '';
+
+      return `
+        <div class="student-item" id="enrollment-${e.id}">
+          ${av}
+          <div class="student-info">
+            <div class="student-name">${e.student?.full_name || e.student?.username || '—'}</div>
+            <div class="student-email">${e.student?.email || ''}</div>
+            <div class="student-meta">Đăng ký: ${enrollDate}</div>
+          </div>
+          <div class="student-actions">${actions}</div>
+        </div>`;
+    }).join('');
+  }
+
+  async function updateStatus(enrollId, newStatus) {
+    try {
+      const res  = await Auth.fetchWithAuth(
+        `${COURSES_API}/${courseId}/enrollments/${enrollId}/`,
+        { method: 'PATCH', body: JSON.stringify({ status: newStatus }) }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        showAlert('page-alert', `${data.message}`, 'success');
+        // Update local data
+        const e = allEnrollments.find(x => x.id === enrollId);
+        if (e) e.status = newStatus;
+        updateCounts();
+        renderList();
+      } else {
+        showAlert('page-alert', `${data.error}`, 'error');
+      }
+    } catch {
+      showAlert('page-alert', 'Lỗi kết nối.', 'error');
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
