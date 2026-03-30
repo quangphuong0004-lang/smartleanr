@@ -197,7 +197,6 @@
 
     document.getElementById('stats-grid').innerHTML = `
       <div class="stat-card green">
-        <div class="stat-icon">📚</div>
         <div class="stat-value green">${s.total_courses}</div>
         <div class="stat-label">Khóa học</div>
       </div>
@@ -206,12 +205,10 @@
         <div class="stat-label">Bài đã hoàn thành</div>
       </div>
       <div class="stat-card amber">
-        <div class="stat-icon">📝</div>
         <div class="stat-value amber">${s.passed_quizzes}/${s.total_quizzes}</div>
         <div class="stat-label">Quiz đã qua</div>
       </div>
       <div class="stat-card purple">
-        <div class="stat-icon">⭐</div>
         <div class="stat-value purple">${s.avg_quiz_score}%</div>
         <div class="stat-label">Điểm quiz TB</div>
       </div>
@@ -326,7 +323,6 @@
 
         <!-- Nhanh tới AI Tutor -->
         <div class="section-card" style="background:linear-gradient(135deg,rgba(74,222,128,0.06),rgba(34,211,238,0.04));border-color:rgba(74,222,128,0.2)">
-          <div style="font-size:28px;margin-bottom:10px">🤖</div>
           <div style="font-family:var(--font-display);font-size:15px;font-weight:700;margin-bottom:6px">AI Tutor</div>
           <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Đặt câu hỏi, nhận giải thích ngay lập tức từ AI</div>
           <a href="/ai-tutor/" class="btn btn-primary btn-full" style="font-size:13px">Hỏi AI ngay</a>

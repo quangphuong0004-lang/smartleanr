@@ -1,3 +1,4 @@
+from google import genai
 import json
 from django.conf import settings
 from django.http import StreamingHttpResponse
@@ -5,7 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import TutorSession, TutorMessage
- 
+
  
 SYSTEM_PROMPT = """Bạn là SmartLearn AI Tutor — trợ lý học tập thông minh.
 Nhiệm vụ của bạn:
@@ -113,20 +114,32 @@ class ChatView(APIView):
  
         # Gọi OpenAI API
         try:
-            import openai
-            client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
- 
-            response = client.chat.completions.create(
-                model='gpt-4o-mini',
-                messages=openai_messages,
-                max_tokens=1000,
-                temperature=0.7,
+            if not settings.GEMINI_API_KEY:
+                return Response({'error': 'Thiếu GEMINI_API_KEY'}, status=500)
+
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
+
+            prompt = SYSTEM_PROMPT + "\n\n"
+
+            if session.course:
+                prompt += f"Khóa học: {session.course.title} — {session.course.subject or ''}\n\n"
+
+            for m in history:
+                if m.role == "user":
+                    prompt += f"User: {m.content}\n"
+                else:
+                    prompt += f"Assistant: {m.content}\n"
+
+            response = client.models.generate_content(
+                model="gemini-2.0-flash-lite",
+                contents=prompt
             )
-            ai_content = response.choices[0].message.content
- 
+
+            ai_content = response.text or "Xin lỗi, tôi chưa trả lời được."
+
         except Exception as e:
+            print("GEMINI ERROR:", e)
             ai_content = f'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Vui lòng thử lại sau.\n\n_(Lỗi: {str(e)[:100]})_'
- 
         # Lưu phản hồi AI
         ai_msg = TutorMessage.objects.create(session=session, role='assistant', content=ai_content)
  

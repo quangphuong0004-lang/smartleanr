@@ -154,20 +154,20 @@
         </div>
       </div>
 
-      <div class="profile-stats">
-        <div class="profile-stat">
-          <div class="profile-stat-num" style="color:var(--accent)">4</div>
-          <div class="profile-stat-label">Khóa học</div>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <div class="profile-stat-num" style="color:var(--accent)" id="stat-courses">—</div>
+            <div class="profile-stat-label">Khóa học</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-num" style="color:var(--accent2)" id="stat-lessons">—</div>
+            <div class="profile-stat-label">Bài hoàn thành</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-num" style="color:var(--accent3)" id="stat-streak">🔥 —</div>
+            <div class="profile-stat-label">Ngày streak</div>
+          </div>
         </div>
-        <div class="profile-stat">
-          <div class="profile-stat-num" style="color:var(--accent2)">28</div>
-          <div class="profile-stat-label">Bài hoàn thành</div>
-        </div>
-        <div class="profile-stat">
-          <div class="profile-stat-num" style="color:var(--accent3)">🔥 7</div>
-          <div class="profile-stat-label">Ngày streak</div>
-        </div>
-      </div>
     </div>
 
     <!-- Tabs -->
@@ -427,8 +427,59 @@ function renderAvatar(user) {
     };
     reader.readAsDataURL(file);
   }
+    async function loadProfileStats() {
+    try {
+      const res  = await Auth.fetchWithAuth('http://localhost:8000/dashboard/api/');
+      if (!res) return;
+      const data = await res.json();
+      const s    = data.stats;
+ 
+      if (data.role === 'student') {
+        document.getElementById('stat-courses').textContent = s.total_courses   ?? '0';
+        document.getElementById('stat-lessons').textContent = s.completed_lessons ?? '0';
+        document.getElementById('stat-streak').textContent  = `🔥 ${s.streak ?? 0}`;
+      } else {
+        // Teacher
+        document.getElementById('stat-courses').textContent = s.total_courses  ?? '0';
+        document.getElementById('stat-lessons').textContent = s.total_students ?? '0';
+        document.getElementById('stat-streak').textContent  = s.total_lessons  ?? '0';
+        // Đổi label cho teacher
+        document.querySelector('#stat-courses + .profile-stat-label').textContent = 'Khóa đã tạo';
+        document.querySelector('#stat-lessons + .profile-stat-label').textContent = 'Học sinh';
+        document.querySelector('#stat-streak + .profile-stat-label').textContent  = 'Bài học';
+      }
+ 
+      // Render activity
+      if (data.role === 'student' && data.recent_activity?.length) {
+        const list = document.getElementById('activity-list');
+        list.innerHTML = data.recent_activity.map(a => `
+          <div class="activity-item">
+            <div class="activity-icon green">✅</div>
+            <div class="activity-text">
+              <div class="activity-title">Hoàn thành: <strong>${a.title}</strong></div>
+              <div class="activity-time">${a.course} · ${timeAgo(a.time)}</div>
+            </div>
+          </div>`).join('') || '<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px">Chưa có hoạt động nào.</div>';
+      } else {
+        document.getElementById('activity-list').innerHTML =
+          '<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px">Chưa có hoạt động nào.</div>';
+      }
+    } catch {}
+  }
+ 
+  function timeAgo(iso) {
+    if (!iso) return '';
+    const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+    if (diff < 60)    return 'Vừa xong';
+    if (diff < 3600)  return `${Math.floor(diff/60)} phút trước`;
+    if (diff < 86400) return `${Math.floor(diff/3600)} giờ trước`;
+    return `${Math.floor(diff/86400)} ngày trước`;
+  }
+ 
   // Fetch mới nhất khi load trang
   fetchAndSaveProfile();
+  loadProfileStats();
+
 </script>
 </body>
 </html>

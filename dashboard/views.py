@@ -55,6 +55,9 @@ class DashboardView(APIView):
                 'thumbnail_url': request.build_absolute_uri(course.thumbnail.url) if course.thumbnail else None,
             })
 
+        # Tính streak — số ngày liên tiếp có hoạt động học tập
+        streak = self._calculate_streak(user)
+
         # Quiz attempts
         attempts = QuizAttempt.objects.filter(
             student=user, status='completed'
@@ -76,12 +79,12 @@ class DashboardView(APIView):
         ).select_related('lesson', 'lesson__course').order_by('-complete_at')[:10]
 
         recent_activity = [{
-            'type': 'lesson_complete',
-            'title': p.lesson.title,
-            'course': p.lesson.course.title,
-            'course_id': str(p.lesson.course.id),
-            'lesson_id': str(p.lesson.id),
-            'time': p.complete_at,
+            'type':       'lesson_complete',
+            'title':      p.lesson.title,
+            'course':     p.lesson.course.title,
+            'course_id':  str(p.lesson.course.id),
+            'lesson_id':  str(p.lesson.id),
+            'time':       p.complete_at,
         } for p in recent_progress]
 
         return Response({
@@ -94,6 +97,7 @@ class DashboardView(APIView):
                 'passed_quizzes':   passed_count,
                 'avg_quiz_score':   avg_score,
                 'overall_progress': round(total_completed_lessons / total_lessons * 100) if total_lessons else 0,
+                'streak':           streak,
             },
             'course_progress': sorted(course_progress, key=lambda x: x['percentage'], reverse=True),
             'recent_activity': recent_activity,
@@ -108,6 +112,36 @@ class DashboardView(APIView):
                 'ended_at':     a.ended_at,
             } for a in attempts.order_by('-ended_at')[:5]],
         })
+
+    def _calculate_streak(self, user):
+        """Đếm số ngày liên tiếp user có hoàn thành ít nhất 1 bài học"""
+        from django.db.models.functions import TruncDate
+        # Lấy danh sách các ngày có activity (distinct)
+        active_days = (
+            LessonProgress.objects.filter(student=user, status='completed', complete_at__isnull=False)
+            .annotate(day=TruncDate('complete_at'))
+            .values_list('day', flat=True)
+            .distinct()
+            .order_by('-day')
+        )
+        if not active_days:
+            return 0
+
+        today   = timezone.now().date()
+        streak  = 0
+        current = today
+
+        for day in active_days:
+            if day == current or day == current - timedelta(days=1):
+                streak  += 1
+                current  = day - timedelta(days=1) if day == current else day - timedelta(days=1)
+                current  = day
+                # Điều chỉnh lại: nếu day == current thì ngày tiếp theo là day-1
+                current  = day - timedelta(days=1)
+            else:
+                break
+
+        return streak
 
     # ── Teacher dashboard ─────────────────────────────────────
     def _teacher_dashboard(self, request):
@@ -147,14 +181,14 @@ class DashboardView(APIView):
             else:
                 passed = avg = 0
             quiz_stats.append({
-                'id': str(quiz.id),
-                'title': quiz.title,
-                'course': quiz.course.title,
-                'course_id': str(quiz.course.id),
-                'total': count,
-                'passed': passed,
-                'pass_rate': round(passed / count * 100) if count else 0,
-                'avg_score': avg,
+                'id':         str(quiz.id),
+                'title':      quiz.title,
+                'course':     quiz.course.title,
+                'course_id':  str(quiz.course.id),
+                'total':      count,
+                'passed':     passed,
+                'pass_rate':  round(passed / count * 100) if count else 0,
+                'avg_score':  avg,
             })
 
         # Đăng ký chờ duyệt

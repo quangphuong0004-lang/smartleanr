@@ -31,6 +31,7 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls', namespace='dashboard')),
     path('', include('notifications.urls', namespace='notifications')),
     path('', include('chat.urls', namespace='chat')),
+    path('', include('ai_tutor.urls', namespace='ai_tutor')),
     
 ]+ static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])\
     + static(settings.MEDIA_URL,  document_root=settings.MEDIA_ROOT)
